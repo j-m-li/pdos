@@ -1,10 +1,14 @@
 
-all: pdos.vhd run
+all: pdos.vhd edit run
 	echo done
 
-cop:
-	mcopy -s -i pdos.vhd ::/devel ./d/
+edit: d/edit.c
+	cc -ansi -Wall -I d/ -o edit d/edit.c
+	./edit
 
+mount:
+	mkdir -p mnt
+	sudo mount -o loop,umask=000,offset=$$((128*512)) -t vfat pdos.vhd mnt
 
 run:
 	qemu-system-i386 -drive file=pdos.vhd,index=0,media=disk,format=raw \
@@ -20,3 +24,8 @@ pdos.vhd: pdos.zip
 pdos.zip:
 #	curl --output pdos.zip http://www.pdos.org/pdos.zip
 	curl --output pdos.zip http://www.pdos.org/uc386.zip
+
+clean:
+	rm -f edit
+	rm -f *.zip *.vhd
+
