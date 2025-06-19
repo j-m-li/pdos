@@ -9,7 +9,7 @@ AR=xar
 
 all: clean edit.exe
 
-edit.exe: edit.obj
+edit.exe: main.obj edit.obj
   $(AR) s temp.lib
   $(LD) $(LDFLAGS) -s -o edit.exe ../devel/pdos/pdpclib/w32start.obj temp.lib ../devel/pdos/pdpclib/msvcrt.lib ../devel/pdos/pdpclib/winsupa.obj
 

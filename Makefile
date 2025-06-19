@@ -2,8 +2,8 @@
 all: pdos.vhd edit run
 	echo done
 
-edit: d/edit.c
-	cc -ansi -Wall -I d/ -o edit d/edit.c
+edit: d/edit.c d/main.c d/std.h
+	cc -ansi -Wall -I d/ -o edit d/main.c d/edit.c
 	./edit
 
 mount:
