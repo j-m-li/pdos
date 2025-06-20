@@ -3,13 +3,11 @@
 
 #include "std.h"
 
-struct tk;
-
 #define TK__STRUCT \
 	int display
 
 struct tk__call {
-	void (*dispose)(struct tk *tk, void *self);
+	void (*dispose)(void *tk, void *self);
 };
 
 struct tk {

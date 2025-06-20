@@ -3,14 +3,14 @@
 void tk_inline__init(struct tk *tk, void *self_)
 {
 	struct tk_inline *self = self_;
-	self->next = 0;
+	self->next = (void*)0;
 	self->flags = 0;
 }
 
 void *tk_inline(struct tk *tk)
 {
 	struct tk_inline *self = tk__create(tk, TK_INLINE);
-	tk_text__init(tk, self, 0, 0);
+	tk_text__init(tk, self, (void*)0, 0);
 	tk_inline__init(tk, self);
 	return self;
 }

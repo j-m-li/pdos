@@ -9,7 +9,7 @@ void tk_range__init(struct tk *tk, void *self_, struct tk_inline *sc,
 	self->start_offset = so;
 	self->end_offset = eo;
 	self->flags = 0;
-	self->next = 0;
+	self->next = (void*)0;
 }
 
 void *tk_range(struct tk *tk, struct tk_inline *sc,

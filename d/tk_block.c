@@ -10,9 +10,9 @@ void tk_block__init(struct tk *tk, void *self_,
 	self->y = y;
 	self->w = w;
 	self->h = h;
-	self->first_child = 0;
-	self->last_child = 0;
-	self->lines = 0;
+	self->first_child = (void*)0;
+	self->last_child = (void*)0;
+	self->lines = (void*)0;
 }
 
 void *tk_block(struct tk *tk, int x, int y, int w, int h)
@@ -61,7 +61,7 @@ static void *tk_block__get_next(struct tk *tk, void *self_, struct tk_inline *c)
 		}
 		n = n->next;
 	}
-	return 0;	
+	return (void*)0;	
 }
 
 void *tk_block__next(struct tk *tk, void *self_, struct tk_inline *c)
@@ -76,7 +76,7 @@ void *tk_block__next(struct tk *tk, void *self_, struct tk_inline *c)
 	n = self->first_child;
 	while (n) {
 		if (n == c) {
-			return 0;
+			return (void*)0;
 		}
 		if (n->display != TK_INLINE && n->display != TK_TEXT) {
 			m = tk_block__get_next(tk, self, c);
@@ -88,7 +88,7 @@ void *tk_block__next(struct tk *tk, void *self_, struct tk_inline *c)
 		}
 		n = n->next;
 	}
-	return 0;
+	return (void*)0;
 }
 
 static void *tk_block__get_prev(struct tk *tk, void *self_, struct tk_inline *c)
@@ -98,7 +98,7 @@ static void *tk_block__get_prev(struct tk *tk, void *self_, struct tk_inline *c)
 	struct tk_inline *m;
 	struct tk_inline *p;
 	n = self->first_child;
-	p = 0;
+	p = (void*)0;
 	while (n) {
 		if (n == c) {
 			if (p) {
@@ -117,7 +117,7 @@ static void *tk_block__get_prev(struct tk *tk, void *self_, struct tk_inline *c)
 		}
 		n = n->next;
 	}
-	return 0;	
+	return (void*)0;	
 }
 
 
@@ -143,7 +143,7 @@ void *tk_block__previous(struct tk *tk, void *self_, struct tk_inline *c)
 	struct tk_inline *m;
 
 	n = self->first_child;
-	p = 0;
+	p = (void*)0;
 	while (n) {
 		if (n == c) {
 			return p;
@@ -159,7 +159,7 @@ void *tk_block__previous(struct tk *tk, void *self_, struct tk_inline *c)
 		p = n;
 		n = n->next;
 	}
-	return 0;
+	return (void*)0;
 }
 
 
@@ -193,7 +193,7 @@ void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
 			o++;
 		} else {
 			o++;
-			while (((unsigned char*)c->data)[o] < 0xC0) {
+			while (((int)((char*)c->data)[o] & 0xFF) < 0xC0) {
 				o++;
 			}
 		}
@@ -205,7 +205,9 @@ void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
 		}
 		o--;
 		if (((char*)c->data)[o] > 0x7F) {
-			while (o > 0 && ((unsigned char*)c->data)[o] < 0xC0) {
+			while (o > 0 && 
+				((int)((char*)c->data)[o] & 0xFF) < 0xC0) 
+			{
 				o--;
 			}
 		}
@@ -258,7 +260,7 @@ void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
 void *tk_block__add_text(struct tk *tk, void *self_, char *txt, int len)
 {
 	struct tk_block *self = self_;
-	struct tk_inline *inli = 0;
+	struct tk_inline *inli = (void*)0;
 	if (!self->last_child) {
 		inli = tk_inline(tk);
 		self->last_child = inli;

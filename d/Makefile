@@ -9,7 +9,7 @@ AR=xar
 
 all: clean edit.exe
 
-edit.exe: main.obj edit.obj
+edit.exe: main.obj edit.obj tk.obj tk_text.obj tk_inline.obj tk_block.obj tk_range.obj tk_style.obj
   $(AR) s temp.lib
   $(LD) $(LDFLAGS) -s -o edit.exe ../devel/pdos/pdpclib/w32start.obj temp.lib ../devel/pdos/pdpclib/msvcrt.lib ../devel/pdos/pdpclib/winsupa.obj
 
