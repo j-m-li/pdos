@@ -171,7 +171,6 @@ void edit__machine(void *self, char *buf, int l)
 			edit__machine(self, buf + 1, l - 1);
 		}
 		return;
-		break;
 	case 2:
 		switch (buf[0]) {
 		case '\033':
@@ -235,7 +234,7 @@ void edit__machine(void *self, char *buf, int l)
 
 int edit__event(void *self, char *buf, int l)
 {
-	/*struct edit *ed = self;*/
+	struct edit *ed = self;
 	edit__machine(self, buf, l);
 	edit__flush(self);
 	return 0;
@@ -245,6 +244,7 @@ int edit__idle(void *self)
 {
 	struct edit *ed = self;
 	tk_block__draw(ed->tk, ed->win, TK_FLAG_DIRTY);
+	ed->std->flush();
 	return 0;
 }
 

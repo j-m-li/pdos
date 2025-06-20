@@ -146,20 +146,16 @@ int main(int argc, char *argv[])
 	tk_block__add_text(tk, win, "hello world", 11);
 	edit = edit__init(tk, win);
 
+	edit__idle(edit);
 	while (1) {
-		tk_block__draw(tk, win, TK_FLAG_DIRTY);
-		edit__idle(edit);
 		if (_kbhit()) {
 #ifdef __WIN32__
-			l = 0;
-			while (l < 1) {
+			c = -1;
+			while (c < 1) {
 				c = getchar();
-				if (c < 1) {
-					break;
-				}
-				buf[l] = c;
-				l++;
 			}
+			buf[0] = c;
+			l = 1;
 #else
 			l = fread(buf, 1, sizeof(buf) - 1, stdin);
 			if (ferror(stdin)) {
@@ -173,6 +169,7 @@ int main(int argc, char *argv[])
 			buf[l] = 0;
 			if (l > 0) {
 				edit__event(edit, buf, l);
+				edit__idle(edit);
 			}
 		}
 	}

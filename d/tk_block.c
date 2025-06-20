@@ -293,7 +293,8 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 		tk->measure_string(tk, r->start_container->data + 
 				r->start_offset,
 				r->end_offset - r->start_offset, &w, &h, &a);
-	} else {
+		r->end_offset = self->last_child->len;
+	} else if (!self->lines) {
 		r = tk_range(tk, self->first_child, 0, self->last_child, 
 				self->last_child->len);
 		self->lines = r;
@@ -326,7 +327,7 @@ void tk_block__draw(struct tk *tk, void *self_, int flags)
 	}
 	r = self->lines;
 	while (r) {
-		if (r->flags & TK_FLAG_DIRTY || flags & TK_FLAG_DIRTY) {
+		if ((r->flags & TK_FLAG_DIRTY) || (flags & TK_FLAG_DIRTY)) {
 			r->flags &= ~TK_FLAG_DIRTY;
 			tk_block__draw_line(tk, self, r, flags);
 		}
