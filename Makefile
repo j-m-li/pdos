@@ -1,10 +1,11 @@
 
-all: pdos.vhd edit run
+all: pdos.vhd edit 
 	echo done
 
 edit: d/edit.c d/main.c d/std.h
-	cc -ansi -Wall -I d/ -o edit d/main.c d/edit.c
-	./edit
+	cc -ansi -Wall -I d/ -o edit.exe d/main.c d/edit.c \
+		d/tk.c d/tk_inline.c d/tk_style.c d/tk_block.c d/tk_text.c \
+		d/tk_range.c
 
 mount:
 	mkdir -p mnt

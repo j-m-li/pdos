@@ -83,7 +83,7 @@ void *edit__init(struct std *std)
 void edit__esc(void *self)
 {
 	struct edit *ed = self;
-	ed->std->exit(0);
+	ed->std->exit("");
 }
 
 void edit__move(void *self, int dx, int dy)
@@ -249,7 +249,7 @@ void edit__machine(void *self, char *buf, int l)
 
 int edit__event(void *self, char *buf, int l)
 {
-	struct edit *ed = self;
+	/*struct edit *ed = self;*/
 	edit__machine(self, buf, l);
 	edit__flush(self);
 	return 0;

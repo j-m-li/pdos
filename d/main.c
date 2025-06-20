@@ -4,6 +4,7 @@
 #include <conio.h>
 #else
 #define _POSIX_C_SOURCE 199309L
+#define _XOPEN_SOURCE 500
 #include <errno.h>
 #include <fcntl.h>
 #include <termios.h>
@@ -19,7 +20,7 @@
 #include <math.h>
 #include <string.h>
 
-#include "std.h"
+#include "tk.h"
 
 extern int edit__event(void *self, char *buf, int l);
 extern int edit__idle(void *self);
@@ -82,11 +83,6 @@ int _kbhit()
 	return 0;
 
 }
-static int _getch()
-{
-	return getchar();
-}
-
 
 #endif
 
@@ -106,11 +102,31 @@ int print(char *buf, int l)
 	return 0;
 }
 
+void *alloc(int size)
+{
+	return malloc(size);
+}
+
+void freemem(void *m)
+{
+	free(m);
+}
+
+void exitnow(char *txt)
+{
+	printf("%s\n", txt);
+	exit(0);
+}
+
 int main(int argc, char *argv[])
 {
 	char buf[32];
 	int l;
+	void *win;
+	void *tk;
+#ifdef __WIN32__
 	int c;
+#endif
 	void *edit;
 	struct std std;
 
@@ -121,10 +137,18 @@ int main(int argc, char *argv[])
 #endif
 	std.print = print;
 	std.flush = flush;
-	std.exit = exit;
+	std.exit = exitnow;
+	std.alloc = alloc;
+	std.free = freemem;
 	edit = edit__init(&std);
 
+	tk = tk__init(&std);
+	win = tk_block(tk, 0, 0, TK_FULL, TK_FULL);
+	tk_block__add_text(tk, win, "hello world", 11);
+
 	while (1) {
+		tk_block__draw(tk, win, TK_FLAG_DIRTY);
+		edit__idle(edit);
 		if (_kbhit()) {
 #ifdef __WIN32__
 			l = 0;
@@ -151,7 +175,6 @@ int main(int argc, char *argv[])
 				edit__event(edit, buf, l);
 			}
 		}
-		edit__idle(edit);
 	}
 	return 0;
 }
