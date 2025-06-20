@@ -41,7 +41,7 @@ void tk_text__add(struct tk *tk, void *self_, void *data, int len)
 		d[i] = o[i];
 	}
 	d[i] = '\0';
-	self->len = len;
+	self->len = nl;
 }
 
 

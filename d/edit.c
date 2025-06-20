@@ -1,9 +1,11 @@
 
-#include "std.h"
+#include "tk.h"
 
 #define MAX_ARG 10
 struct edit {
 	struct std *std;
+	struct tk *tk;
+	void *win;
 	int state;
 	int w;
 	int h;
@@ -65,10 +67,12 @@ void edit__printn(void *self, int v)
 	edit__print(self, buf);
 }
 
-void *edit__init(struct std *std)
+void *edit__init(struct tk *tk, void *win)
 {
 	static struct edit ed;
-	ed.std = std;
+	ed.std = tk->std;
+	ed.tk = tk;
+	ed.win = win;
 	ed.state = 0;
   	ed.cw = 8;
 	ed.ch = 12;
@@ -104,11 +108,7 @@ void edit__move(void *self, int dx, int dy)
 	} else if (ed->cy >= ed->h) {
 		ed->cy = ed->h - 1;
 	}
-	edit__print(self, "\033[");
-	edit__printn(self, ed->cy + 1);
-	edit__print(self, ";");
-	edit__printn(self, ed->cx + 1);
-	edit__print(self, "H");
+	ed->tk->move_to(ed->tk, ed->cx, ed->cy);
 }
 
 void edit__enter(void *self)
@@ -116,6 +116,7 @@ void edit__enter(void *self)
 	struct edit *ed = self;
 	ed->cx = 0;
 	edit__move(self, 0, 1);
+	tk_block__add_text(ed->tk, ed->win, "\n", 1);
 
 }
 
@@ -179,7 +180,7 @@ void edit__machine(void *self, char *buf, int l)
 		} else if (buf[0] == '\n') {
 			edit__enter(self);
 		} else {
-			ed->std->print(buf, 1);
+			tk_block__add_text(ed->tk, ed->win, buf, 1);
 		}
 		if (l > 1) {
 			edit__machine(self, buf + 1, l - 1);
@@ -257,6 +258,8 @@ int edit__event(void *self, char *buf, int l)
 
 int edit__idle(void *self)
 {
+	struct edit *ed = self;
+	tk_block__draw(ed->tk, ed->win, TK_FLAG_DIRTY);
 	return 0;
 }
 

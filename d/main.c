@@ -24,7 +24,7 @@
 
 extern int edit__event(void *self, char *buf, int l);
 extern int edit__idle(void *self);
-extern void *edit__init(struct std *std);
+extern void *edit__init(struct tk *tk, void *win);
 
 #ifndef __WIN32__
 struct termios orig_termios = {0};
@@ -140,11 +140,11 @@ int main(int argc, char *argv[])
 	std.exit = exitnow;
 	std.alloc = alloc;
 	std.free = freemem;
-	edit = edit__init(&std);
 
 	tk = tk__init(&std);
 	win = tk_block(tk, 0, 0, TK_FULL, TK_FULL);
 	tk_block__add_text(tk, win, "hello world", 11);
+	edit = edit__init(tk, win);
 
 	while (1) {
 		tk_block__draw(tk, win, TK_FLAG_DIRTY);
