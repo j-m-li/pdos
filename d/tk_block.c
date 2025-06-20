@@ -43,6 +43,194 @@ void tk_block__dirty_after(struct tk *tk, struct tk_block *self,
 	}
 }
 
+static void *tk_block__get_next(struct tk *tk, void *self_, struct tk_inline *c)
+{
+	struct tk_block *self = self_;
+	struct tk_inline *n;
+	struct tk_inline *m;
+	n = self->first_child;
+	while (n) {
+		if (n == c) {
+			return (void*)1;
+		}
+		if (n->display != TK_INLINE && n->display != TK_TEXT) {
+			m = tk_block__get_next(tk, self, c);
+			if (m == (void*)1) {
+				return n->next;	
+			}
+		}
+		n = n->next;
+	}
+	return 0;	
+}
+
+void *tk_block__next(struct tk *tk, void *self_, struct tk_inline *c)
+{
+	struct tk_block *self = self_;
+	struct tk_inline *n;
+	struct tk_inline *m;
+
+	if (c->next) {
+		return c->next;
+	}
+	n = self->first_child;
+	while (n) {
+		if (n == c) {
+			return 0;
+		}
+		if (n->display != TK_INLINE && n->display != TK_TEXT) {
+			m = tk_block__get_next(tk, self, c);
+			if (m == (void*)1) {
+				return n->next;
+			} else if (m) {
+				return m;
+			}
+		}
+		n = n->next;
+	}
+	return 0;
+}
+
+static void *tk_block__get_prev(struct tk *tk, void *self_, struct tk_inline *c)
+{
+	struct tk_block *self = self_;
+	struct tk_inline *n;
+	struct tk_inline *m;
+	struct tk_inline *p;
+	n = self->first_child;
+	p = 0;
+	while (n) {
+		if (n == c) {
+			if (p) {
+				return p;
+			}
+			return (void*)1;
+		}
+		if (n->display != TK_INLINE && n->display != TK_TEXT) {
+			m = tk_block__get_next(tk, self, c);
+			if (m == (void*)1) {
+				if (p) {
+					return p;
+				}
+				return m;	
+			}
+		}
+		n = n->next;
+	}
+	return 0;	
+}
+
+
+void *tk_block__up(struct tk *tk, void *self_, struct tk_inline *c, int *o)
+{
+	struct tk_block *self = self_;
+	struct tk_inline *n;
+	return c;
+}
+
+void *tk_block__down(struct tk *tk, void *self_, struct tk_inline *c, int *o)
+{
+	struct tk_block *self = self_;
+	struct tk_inline *n;
+	return c;
+}
+
+void *tk_block__previous(struct tk *tk, void *self_, struct tk_inline *c)
+{
+	struct tk_block *self = self_;
+	struct tk_inline *n;
+	struct tk_inline *p;
+	struct tk_inline *m;
+
+	n = self->first_child;
+	p = 0;
+	while (n) {
+		if (n == c) {
+			return p;
+		}
+		if (n->display != TK_INLINE && n->display != TK_TEXT) {
+			m = tk_block__get_prev(tk, self, c);
+			if (m == (void*)1) {
+				return p;
+			} else if (m) {
+				return m;
+			}
+		}
+		p = n;
+		n = n->next;
+	}
+	return 0;
+}
+
+
+void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
+{
+	struct tk_block *self = self_;
+	struct tk_inline *c = self->first_child;
+	int o = 0;
+	struct tk_range *r = self->selection;
+	if (!r) {
+		r = tk_range(tk, c, 0, c, 0);
+		r->common_ancestor = self_;
+		self->selection = r;
+		return;	
+	}
+	if (!c) {
+		return;
+	}
+	if (r->flags & TK_FLAG_REVERSE) {
+		o = r->start_offset;
+		c = r->start_container;
+	} else {
+		o = r->end_offset;
+		c = r->end_container;
+	}
+	/* FIXME UTF-8 */
+	o += dx;
+	if (o < 0) {
+		c = tk_block__previous(tk, self, c);
+		if (!c) {
+			return;
+		}
+		o = c->len;
+		if (o > 0) {
+			o--;
+		}
+	} else if (o > c->len) {
+		c = tk_block__next(tk, self, c);
+		if (!c) {
+			return;
+		}
+		o = 0;
+	}
+	while (dy > 0) {
+		c = tk_block__down(tk, self, c, &o);
+		if (!c) {
+			return;
+		}
+		dy--;
+	}
+	while (dy < 0) {
+		c = tk_block__up(tk, self, c, &o);
+		if (!c) {
+			return;
+		}
+		dy++;
+	}
+	if (flags & TK_FLAG_COLLAPSE) {
+		r->start_container = c;
+		r->end_container = c;
+		r->start_offset = o; 
+		r->end_offset = o;
+	} else if (r->flags & TK_FLAG_REVERSE) {
+		r->start_offset = 0;
+		r->start_container = c;
+	} else {
+		r->end_offset = 0;
+		r->end_container = c;
+	}
+}
+
 void *tk_block__add_text(struct tk *tk, void *self_, char *txt, int len)
 {
 	struct tk_block *self = self_;
@@ -67,6 +255,7 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 {
 	struct tk_block *self = self_;
 	struct tk_range *r;
+	int w, h, a;
 	r = self->lines;
 	while (r) {
 		if (r->flags & TK_FLAG_DIRTY) {
@@ -75,7 +264,9 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 		r = r->next;
 	}
 	if (r && (r->start_container == self->last_child)) {
-
+		tk->measure_string(tk, r->start_container->data + 
+				r->start_offset,
+				r->end_offset - r->start_offset, &w, &h, &a);
 	} else {
 		r = tk_range(tk, self->first_child, 0, self->last_child, 
 				self->last_child->len);

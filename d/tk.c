@@ -50,6 +50,22 @@ void tk__printn(void *self, int v)
 	tk__print(self, buf);
 }
 
+void tk__measure_string(struct tk *tk, char *txt, int len, 
+		int *w, int *h, int *a)
+{
+	int i;
+	*h = 1;
+	*a = 1;
+	*w = 0;
+	for (i = 0; i < len; i++) { /* UTF-8 */
+		if (txt[i] < 0x80) {
+			*w += 1;
+		} else if (txt[i] >= 0xC0) { 
+			*w += 1;
+		}
+	}
+}
+
 void tk__draw_string(struct tk *tk, char *txt, int len)
 {
 	tk->std->print(txt, len);
@@ -72,6 +88,7 @@ void *tk__init(struct std *std)
 	tk->w = 80;
 	tk->h = 25;
 	tk->draw_string = tk__draw_string;
+	tk->measure_string = tk__measure_string;
 	tk->move_to = tk__move_to;
 	return tk;	
 }

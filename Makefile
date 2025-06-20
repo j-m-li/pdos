@@ -27,6 +27,6 @@ pdos.zip:
 	curl --output pdos.zip http://www.pdos.org/uc386.zip
 
 clean:
-	rm -f edit
+	rm -f edit edit.exe
 	rm -f *.zip *.vhd
 

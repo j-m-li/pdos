@@ -93,22 +93,7 @@ void edit__esc(void *self)
 void edit__move(void *self, int dx, int dy)
 {
 	struct edit *ed = self;
-	if (ed->index > 1 && ed->arg[0] == 1 && ed->arg[1] == 5) {
-		/* FIXME ctrl pressed */
-	}
-	ed->cx += dx;
-	ed->cy += dy;
-	if (ed->cx < 0) {
-		ed->cx = 0;
-	} else if (ed->cx >= ed->w) {
-		ed->cx = ed->w - 1;
-	}
-	if (ed->cy < 0) {
-		ed->cy = 0;
-	} else if (ed->cy >= ed->h) {
-		ed->cy = ed->h - 1;
-	}
-	ed->tk->move_to(ed->tk, ed->cx, ed->cy);
+	tk_block__move(ed->tk, ed->win, dx, dy, TK_FLAG_COLLAPSE);
 }
 
 void edit__enter(void *self)

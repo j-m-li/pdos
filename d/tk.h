@@ -13,17 +13,21 @@ struct tk__call {
 };
 
 struct tk {
-	struct tk__call *call;
 	TK__STRUCT;
+	struct tk__call *call;
 	struct std *std;
 	int w;
 	int h;
 	void (*draw_string)(struct tk *tk, char *txt, int len);
+	void (*measure_string)(struct tk *tk, char *txt, int len, 
+			int *width, int *height, int *ascent);
 	void (*move_to)(struct tk *tk, int x, int y);
 };
 
 enum {
-	TK_FLAG_DIRTY = 0x80000000
+	TK_FLAG_DIRTY = 0x80000000,
+	TK_FLAG_REVERSE = 0x40000000,
+	TK_FLAG_COLLAPSE = 0x20000000
 };
 
 #include "tk_style.h"
