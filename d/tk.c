@@ -58,9 +58,9 @@ void tk__measure_string(struct tk *tk, char *txt, int len,
 	*a = 1;
 	*w = 0;
 	for (i = 0; i < len; i++) { /* UTF-8 */
-		if (txt[i] < 0x80) {
+		if (txt[i] <= 0x7F) {
 			*w += 1;
-		} else if (txt[i] >= 0xC0) { 
+		} else if (((unsigned char*)txt)[i] >= 0xC0) { 
 			*w += 1;
 		}
 	}

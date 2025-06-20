@@ -185,9 +185,33 @@ void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
 		o = r->end_offset;
 		c = r->end_container;
 	}
-	/* FIXME UTF-8 */
-	o += dx;
-	if (o < 0) {
+	while (dx > 0) {
+		if (o >= c->len) {
+			break;
+		}
+		if (((char*)c->data)[o] <= 0x7F) {
+			o++;
+		} else {
+			o++;
+			while (((unsigned char*)c->data)[o] < 0xC0) {
+				o++;
+			}
+		}
+		dx--;
+	}
+	while (dx < 0) {
+		if (o < 1) {
+			break;
+		}
+		o--;
+		if (((char*)c->data)[o] > 0x7F) {
+			while (o > 0 && ((unsigned char*)c->data)[o] < 0xC0) {
+				o--;
+			}
+		}
+		dx++;
+	}
+	if (dx < 0) {
 		c = tk_block__previous(tk, self, c);
 		if (!c) {
 			return;
@@ -196,7 +220,7 @@ void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
 		if (o > 0) {
 			o--;
 		}
-	} else if (o > c->len) {
+	} else if (dx > 0) {
 		c = tk_block__next(tk, self, c);
 		if (!c) {
 			return;
