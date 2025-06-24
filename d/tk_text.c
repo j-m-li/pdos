@@ -24,8 +24,14 @@ void tk_text__add(struct tk *tk, void *self_, void *data, int len)
 	char *o;
 	char *d;
 	int i = self->len;
+	if (!data) {
+		return;
+	}
 	nl = len + self->len;
 	d = tk->std->alloc(nl + 1);
+	if (!d) {
+		return;
+	}
 	if (self->data) {
 		o = self->data;
 		while (i > 0) {

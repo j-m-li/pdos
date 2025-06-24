@@ -2,14 +2,18 @@
 
 #ifdef __WIN32__
 #include <conio.h>
+#elif defined(__wasm32__)
 #else
 #define _POSIX_C_SOURCE 199309L
 #define _XOPEN_SOURCE 500
 #include <errno.h>
 #include <fcntl.h>
-#include <termios.h>
 #include <signal.h>
+#ifdef C90
+#else
+#include <termios.h>
 #include <sys/select.h>
+#endif
 #include <sys/ioctl.h>
 #include <unistd.h>
 
@@ -26,7 +30,20 @@ extern int edit__event(void *self, char *buf, int l);
 extern int edit__idle(void *self);
 extern void *edit__init(struct tk *tk, void *win);
 
-#ifndef __WIN32__
+#ifdef __WIN32__
+#elif defined(C90)
+int term__init(int a)
+{
+	system("stty -icanon -echo -isig -iexten iutf8");
+	return 0;
+}
+
+int _kbhit()
+{
+	return 1;
+}
+
+#else
 struct termios orig_termios = {0};
 struct sigaction old_action;
 
@@ -93,6 +110,7 @@ void flush()
 
 int print(char *buf, int l)
 {
+	if (!buf) return -1;
 	fwrite(buf, 1, l, stdout);
 	/*
 	int i;
@@ -104,6 +122,9 @@ int print(char *buf, int l)
 
 void *alloc(int size)
 {
+	if (size < 1 || size > 0x10000000) {
+		return (void*)0;
+	}
 	return malloc(size);
 }
 
@@ -115,6 +136,7 @@ void freemem(void *m)
 void exitnow(char *txt)
 {
 	printf("%s\n", txt);
+	system("stty sane");
 	exit(0);
 }
 
@@ -124,13 +146,14 @@ int main(int argc, char *argv[])
 	int l;
 	void *win;
 	void *tk;
-#ifdef __WIN32__
+#if defined(__WIN32__) || defined(C90)
 	int c;
 #endif
 	void *edit;
 	struct std std;
 
 	setvbuf(stdin, NULL, _IONBF, 0);
+
 #ifdef __WIN32__
 #else
 	term__init(0);
@@ -142,20 +165,35 @@ int main(int argc, char *argv[])
 	std.free = freemem;
 
 	tk = tk__init(&std);
+	if (!tk) {
+		return 1;
+	}
 	win = tk_block(tk, 0, 0, TK_FULL, TK_FULL);
+	if (!win) {
+		return 2;
+	}
 	tk_block__add_text(tk, win, "hello world", 11);
 	edit = edit__init(tk, win);
 
 	edit__idle(edit);
 	while (1) {
 		if (_kbhit()) {
-#ifdef __WIN32__
+#if defined(__WIN32__) || defined(C90)
 			c = -1;
-			while (c < 1) {
+			while (c < 1 || c > 0xFF) {
 				c = getchar();
 			}
 			buf[0] = c;
 			l = 1;
+			if (c == '\033') {
+				c = getchar();
+				if (c > 0 && c < 0x100) {
+					buf[1] = c;
+				} else {
+					buf[1] = '\033';
+				}
+				l = 2;
+			}
 #else
 			l = fread(buf, 1, sizeof(buf) - 1, stdin);
 			if (ferror(stdin)) {

@@ -1,9 +1,26 @@
 
-all: pdos.vhd edit 
+all:  edit wa
 	echo done
+	
+wa:
+	clang --target=wasm32 -S -I d/ -o tk.s d/tk.c
+	clang --target=wasm32 -c -I d/ -o tk.o tk.s
+	wasm-ld -allow-undefined --no-entry  -o tk.wasm tk.o
+	clang -ansi --target=wasm32 -nostdlib -fno-builtin -D C90=1 \
+		-I ~/.local/wpdcc/include/ \
+		-I d/ -o edit.wasm \
+		~/.local/wpdcc/lib/libwasm.a \
+		d/edit.c \
+		d/tk.c d/tk_inline.c d/tk_style.c d/tk_block.c d/tk_text.c \
+		d/tk_range.c \
+		d/main.c 
+
+#	llvm-objdump  --full-contents  -d tk.wasm
+
 
 edit: d/edit.c d/main.c d/std.h
-	cc -ansi -Wall -I d/ -o edit.exe d/main.c d/edit.c \
+	wpdcc -D C90=1 \
+		-I d/ -o edit.exe d/main.c d/edit.c \
 		d/tk.c d/tk_inline.c d/tk_style.c d/tk_block.c d/tk_text.c \
 		d/tk_range.c
 

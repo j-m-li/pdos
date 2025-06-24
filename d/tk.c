@@ -83,7 +83,13 @@ void tk__move_to(struct tk *tk, int x, int y)
 void *tk__init(struct std *std)
 {
 	struct tk *tk;
+	if (!std) {
+		return std;
+	}
 	tk = std->alloc(sizeof(struct tk));
+	if (!tk) {
+		return tk;
+	}
 	tk->std = std;
 	tk->w = 80;
 	tk->h = 25;
@@ -111,6 +117,9 @@ void *tk__create(struct tk *tk, int type)
 		break;
 	default:
 		tk->std->exit("unknow widget");
+	}
+	if (!m) {
+		return m;
 	}
 	((struct tk_text *)m)->display = type;
 	return m;

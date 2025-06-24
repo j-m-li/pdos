@@ -261,6 +261,9 @@ void *tk_block__add_text(struct tk *tk, void *self_, char *txt, int len)
 {
 	struct tk_block *self = self_;
 	struct tk_inline *inli = (void*)0;
+	if (!self || !tk || !txt) {
+		return inli;
+	}
 	if (!self->last_child) {
 		inli = tk_inline(tk);
 		self->last_child = inli;
