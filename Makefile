@@ -3,18 +3,22 @@ all:  edit wa
 	echo done
 	
 wa:
-	clang --target=wasm32 -S -I d/ -o tk.s d/tk.c
-	clang --target=wasm32 -c -I d/ -o tk.o tk.s
-	wasm-ld -allow-undefined --no-entry  -o tk.wasm tk.o
-	clang -ansi --target=wasm32 -nostdlib -fno-builtin -D C90=1 \
+#	clang --target=wasm32 -S -I d/ -o tk.s d/tk.c
+#	clang --target=wasm32 -c -I d/ -o tk.o tk.s
+#	wasm-ld -allow-undefined --no-entry  -o tk.wasm tk.o
+	clang -ansi --target=wasm32 -nostdlib \
+		-Wl,--export-all,-allow-undefined,--no-entry -fno-builtin\
+	       	-D C90=1 \
 		-I ~/.local/wpdcc/include/ \
 		-I d/ -o edit.wasm \
 		~/.local/wpdcc/lib/libwasm.a \
+		d/main.c \
 		d/edit.c \
 		d/tk.c d/tk_inline.c d/tk_style.c d/tk_block.c d/tk_text.c \
-		d/tk_range.c \
-		d/main.c 
-
+		d/tk_range.c 
+		zcat 3o3_exe.cmd.gz > test.cmd
+		cat edit.wasm >> test.cmd
+		http-server
 #	llvm-objdump  --full-contents  -d tk.wasm
 
 
@@ -46,4 +50,9 @@ pdos.zip:
 clean:
 	rm -f edit edit.exe
 	rm -f *.zip *.vhd
+
+fmt:
+	clang-format --style="{BasedOnStyle: llvm,UseTab: Always,IndentWidth: 8,TabWidth: 8}" -i d/*.h d/*.c
+	tidy -i -w 1024 --preserve-entities yes --show-info no --warn-proprietary-attributes no -m *.html
+	js-beautify -n --no-preserve-newlines -w 79 -s 2 *.js
 
