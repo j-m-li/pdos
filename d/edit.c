@@ -67,6 +67,7 @@ void edit__printn(void *self, int v)
 	edit__print(self, buf);
 }
 
+
 void *edit__init(struct tk *tk, void *win)
 {
 	static struct edit ed;
@@ -243,7 +244,9 @@ int edit__event(void *self, char *buf, int l)
 int edit__idle(void *self)
 {
 	struct edit *ed = self;
+	ed->tk->hide_cursor(ed->tk);
 	tk_block__draw(ed->tk, ed->win, TK_FLAG_DIRTY);
+	ed->tk->show_cursor(ed->tk, ed->tk->cursor_x, ed->tk->cursor_y);
 	ed->std->flush();
 	return 0;
 }

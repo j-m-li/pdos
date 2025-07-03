@@ -50,7 +50,7 @@ void tk__printn(void *self, int v)
 	tk__print(self, buf);
 }
 
-void tk__measure_string(struct tk *tk, char *txt, int len, 
+int tk__measure_string(struct tk *tk, char *txt, int len, 
 		int *w, int *h, int *a)
 {
 	int i;
@@ -58,17 +58,36 @@ void tk__measure_string(struct tk *tk, char *txt, int len,
 	*a = 1;
 	*w = 0;
 	for (i = 0; i < len; i++) { /* UTF-8 */
+		if (txt[i] == '\r' && txt[i+1] == '\n') {
+			i += 2;
+			break;
+		} else if (txt[i] == '\n') {
+			i++;
+			break;
+		}
 		if (txt[i] <= 0x7F) {
+			if (txt[i] == '\t') {
+
+			}
 			*w += 1;
 		} else if (((int)txt[i] & 0xFF) >= 0xC0) { 
 			*w += 1;
 		}
 	}
+	return i;
 }
 
-void tk__draw_string(struct tk *tk, char *txt, int len)
+int tk__draw_string(struct tk *tk, char *txt, int len)
 {
+	int w,h,a;
+	tk__measure_string(tk, txt, len, &w, &h, &a);
 	tk->std->print(txt, len);
+	return w;
+}
+
+void tk__clear_screen(struct tk *tk)
+{
+	tk__print(tk, "\033[3J");
 }
 
 void tk__move_to(struct tk *tk, int x, int y)
@@ -78,6 +97,37 @@ void tk__move_to(struct tk *tk, int x, int y)
 	tk__print(tk, ";");
 	tk__printn(tk, x + 1);
 	tk__print(tk, "H");
+}
+
+void tk__print_status(struct tk *tk, char *txt, int a, int b)
+{
+	tk__move_to(tk, 0, tk->h - 1);
+	tk__print(tk, txt);
+	tk__print(tk, "  ");
+	tk__printn(tk, a);
+	tk__print(tk, ";");
+	tk__printn(tk, b);
+	tk__print(tk, "  ");
+}
+
+void tk__hide_cursor(struct tk *tk)
+{
+	tk__print(tk, "\033[?25l");
+}
+void tk__show_cursor(struct tk *tk, int x, int y)
+{
+	tk->cursor_x = x;
+	tk->cursor_y = y;
+	tk__move_to(tk, x, y);
+	tk__print(tk, "\033[?25h");
+}
+void tk__set_rev(struct tk *tk)
+{
+	tk__print(tk, "\033[7m");
+}
+void tk__clr_rev(struct tk *tk)
+{
+	tk__print(tk, "\033[27m");
 }
 
 void *tk__init(struct std *std)
@@ -92,10 +142,17 @@ void *tk__init(struct std *std)
 	}
 	tk->std = std;
 	tk->w = 80;
-	tk->h = 25;
+	tk->h = 24;
+	tk->cursor_x = 0;
+	tk->cursor_y = 0;
 	tk->draw_string = tk__draw_string;
 	tk->measure_string = tk__measure_string;
 	tk->move_to = tk__move_to;
+	tk->print_status = tk__print_status;
+	tk->show_cursor = tk__show_cursor;
+	tk->hide_cursor = tk__hide_cursor;
+	tk->set_rev = tk__set_rev;
+	tk->clr_rev = tk__clr_rev;
 	return tk;	
 }
 

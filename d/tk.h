@@ -16,10 +16,17 @@ struct tk {
 	struct std *std;
 	int w;
 	int h;
-	void (*draw_string)(struct tk *tk, char *txt, int len);
-	void (*measure_string)(struct tk *tk, char *txt, int len, 
+	int cursor_x;
+	int cursor_y;
+	int (*draw_string)(struct tk *tk, char *txt, int len);
+	int (*measure_string)(struct tk *tk, char *txt, int len, 
 			int *width, int *height, int *ascent);
 	void (*move_to)(struct tk *tk, int x, int y);
+	void (*show_cursor)(struct tk *tk, int x, int y);
+	void (*hide_cursor)(struct tk *tk);
+	void (*set_rev)(struct tk *tk);
+	void (*clr_rev)(struct tk *tk);
+	void (*print_status)(struct tk *tk, char *txt, int a, int b);
 };
 
 enum {

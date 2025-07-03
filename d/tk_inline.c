@@ -15,13 +15,16 @@ void *tk_inline(struct tk *tk)
 	return self;
 }
 
-void tk_inline__draw(struct tk *tk, void *self_, int start, int end)
+int  tk_inline__draw(struct tk *tk, void *self_, int start, int end)
 {
 	struct tk_inline *self = self_;
+	int w = 0;
 	if (self->display == TK_INLINE || self->display == TK_TEXT) {
 		if (self->data) {
-			tk->draw_string(tk, self->data + start, end - start);
+			w = tk->draw_string(tk, 
+				self->data + start, end - start);
 		}
 	}
+	return w;
 }
 

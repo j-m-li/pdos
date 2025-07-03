@@ -140,18 +140,13 @@ void exitnow(char *txt)
 	exit(0);
 }
 
-int main(int argc, char *argv[])
-{
-	char buf[32];
-	int l;
-	void *win;
-	void *tk;
-#if defined(__WIN32__) || defined(C90)
-	int c;
-#endif
-	void *edit;
-	struct std std;
+static void *win;
+static void *tk;
+static void *edit;
+static struct std std;
 
+void setup(void)
+{
 	setvbuf(stdin, NULL, _IONBF, 0);
 
 #ifdef __WIN32__
@@ -166,17 +161,25 @@ int main(int argc, char *argv[])
 
 	tk = tk__init(&std);
 	if (!tk) {
-		return 1;
+		exit(1);
 	}
 	win = tk_block(tk, 0, 0, TK_FULL, TK_FULL);
 	if (!win) {
-		return 2;
+		exit(2);
 	}
 	tk_block__add_text(tk, win, "hello world", 11);
 	edit = edit__init(tk, win);
 
 	edit__idle(edit);
-	while (1) {
+}
+
+void loop(void)
+{
+	char buf[32];
+	int l;
+#if defined(__WIN32__) || defined(C90)
+	int c;
+#endif
 		if (_kbhit()) {
 #if defined(__WIN32__) || defined(C90)
 			c = -1;
@@ -210,6 +213,14 @@ int main(int argc, char *argv[])
 				edit__idle(edit);
 			}
 		}
+
+}
+
+int main(int argc, char *argv[])
+{
+	setup();
+	while (1) {
+		loop();
 	}
 	return 0;
 }

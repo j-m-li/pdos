@@ -1,5 +1,5 @@
 
-all:  edit wa
+all:  edit 
 	echo done
 	
 wa:

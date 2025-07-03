@@ -15,6 +15,9 @@ struct tk_range {
 	struct tk_inline *common_ancestor;
 	struct tk_range *next;
 	int flags;
+	int x;
+	int y;
+	int h;
 };
 
 

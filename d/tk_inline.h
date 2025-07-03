@@ -16,7 +16,7 @@ struct tk_inline {
 };
 
 void tk_inline__init(struct tk *tk, void *self);
-void tk_inline__draw(struct tk *tk, void *self, int start, int end);
+int tk_inline__draw(struct tk *tk, void *self, int start, int end);
 
 #ifdef __cplusplus
 }

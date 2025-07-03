@@ -191,23 +191,38 @@ void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
 		}
 		if (((char*)c->data)[o] <= 0x7F) {
 			o++;
+			if (o < c->len && ((char*)c->data)[o] == '\r') {
+				o++;
+			}
 		} else {
 			o++;
 			while (((int)((char*)c->data)[o] & 0xFF) < 0xC0) {
+				if (o >= c->len) {
+					break;
+				}
 				o++;
 			}
 		}
 		dx--;
 	}
 	while (dx < 0) {
+		if (o > c->len) {
+			o--;
+		}
 		if (o < 1) {
 			break;
 		}
 		o--;
+		if (((char*)c->data)[o] == '\r' && o > 0) {
+			o--;
+		}
 		if (((char*)c->data)[o] > 0x7F) {
 			while (o > 0 && 
 				((int)((char*)c->data)[o] & 0xFF) < 0xC0) 
 			{
+				if (o < 1) {
+					break;
+				}
 				o--;
 			}
 		}
@@ -285,35 +300,121 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 	struct tk_block *self = self_;
 	struct tk_range *r;
 	int w, h, a;
+	int x;
+	int y = 0;
+	int o;
+	if (!self->lines) {
+		r = tk_range(tk, self->first_child, 0, self->last_child, 
+				self->last_child->len);
+		self->lines = r;
+		r->flags |= TK_FLAG_DIRTY;
+	}
 	r = self->lines;
 	while (r) {
 		if (r->flags & TK_FLAG_DIRTY) {
 			break;
 		}
+		y = r->y + r->h;
 		r = r->next;
 	}
 	if (r && (r->start_container == self->last_child)) {
-		tk->measure_string(tk, r->start_container->data + 
-				r->start_offset,
-				r->end_offset - r->start_offset, &w, &h, &a);
-		r->end_offset = self->last_child->len;
-	} else if (!self->lines) {
-		r = tk_range(tk, self->first_child, 0, self->last_child, 
-				self->last_child->len);
-		self->lines = r;
-	}
-	while (r) {
-		r = r->next;
+		o = r->start_offset;
+		while (o < self->last_child->len) {
+			x = 0;
+			w = self->w;
+			r->start_container = self->last_child;
+			r->end_container = self->last_child;
+			r->start_offset = o;
+			o += tk->measure_string(tk, r->start_container->data + o,
+				self->last_child->len - o, &w, &h, &a);
+			r->x = x;
+			r->y = y;
+			r->h = h;
+			y += h;
+			x += w;
+			r->end_offset = o;
+			r->flags |= TK_FLAG_DIRTY;
+			if (o < self->last_child->len) {
+				if (!r->next) {
+					r->next = tk_range(tk, 
+						r->start_container, 0, 
+						r->start_container,
+						r->start_container->len);
+				}
+				r = r->next;
+			}
+		}
+		while (r->next) {
+			r = r->next;
+			r->start_container = (void*)0;
+			r->end_container = (void*)0;
+		}
 	}
 }
 
 void tk_block__draw_line(struct tk *tk, struct tk_block *self,
 		struct tk_range *r, int flags)
 {
-	tk->move_to(tk, self->x, self->y);
+	static int i = 0;
+	int o = 0;
+	int c;
+	struct tk_range *s = self->selection;
+	if (s) {
+	tk->print_status(tk, "GOO ", s->start_offset, s->end_offset + i);
+	i++;
+	}
+	tk->move_to(tk, self->x + r->x, self->y + r->y);
 	if (r->start_container == r->end_container) {
-		tk_inline__draw(tk, r->start_container, r->start_offset,
-				r->end_offset);
+		if (s && s->start_container == s->end_container &&
+				r->start_container == s->end_container &&
+				s->start_offset < r->end_offset &&
+				s->end_offset > r->start_offset) 
+		{
+			if (r->start_offset < s->start_offset) {
+				o = tk_inline__draw(tk, r->start_container, 
+					r->start_offset, s->start_offset);
+			}
+			if (s->start_offset >= r->start_offset &&
+					s->end_offset <= r->end_offset)
+			{
+				tk->show_cursor(tk, 
+						self->x + r->x + o, 
+						self->y + r->y);
+				tk->move_to(tk, self->x + r->x + o, 
+						self->y + r->y);
+				tk->set_rev(tk);
+				o += tk_inline__draw(tk, s->start_container, 
+					s->start_offset, s->end_offset);
+				tk->clr_rev(tk);
+			}
+			tk->move_to(tk, self->x + r->x + o, self->y + r->y);
+			if (r->end_offset >  s->end_offset) {
+				tk_inline__draw(tk, r->start_container, 
+					s->end_offset, r->end_offset);
+			}
+		} else {
+			if (s && s->start_container == s->end_container &&
+				r->start_container == s->end_container &&
+				s->end_offset == r->start_offset) 
+			{
+					tk->show_cursor(tk, 
+						self->x + r->x + o, 
+						self->y + r->y);
+			}
+			o = tk_inline__draw(tk, r->start_container, 
+					r->start_offset, r->end_offset);
+			if (s && s->start_container == s->end_container &&
+				r->start_container == s->end_container &&
+				s->start_offset == r->end_offset)
+			{
+					tk->show_cursor(tk, 
+						self->x + r->x + o, 
+						self->y + r->y);
+			}
+
+
+
+		}
 	} else {
 
 	}
