@@ -16,7 +16,8 @@ struct tk_text {
 };
 
 void tk_text__init(struct tk *tk, void *self, void *data, int len);
-void tk_text__add(struct tk *tk, void *self, void *data, int len);
+int tk_text__add(struct tk *tk, void *self, int start, void *data, int len);
+void tk_text__del(struct tk *tk, void *self, int start, int len);
 
 #ifdef __cplusplus
 }

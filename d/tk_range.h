@@ -18,6 +18,7 @@ struct tk_range {
 	int x;
 	int y;
 	int h;
+	int w;
 };
 
 

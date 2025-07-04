@@ -91,25 +91,42 @@ void edit__esc(void *self)
 	ed->std->exit("");
 }
 
-void edit__move(void *self, int dx, int dy)
+void edit__move(void *self, int dx, int dy, int shift)
 {
 	struct edit *ed = self;
-	tk_block__move(ed->tk, ed->win, dx, dy, TK_FLAG_COLLAPSE);
+	if (shift) {
+		tk_block__move(ed->tk, ed->win, dx, dy, TK_FLAG_END);
+	} else {
+		tk_block__move(ed->tk, ed->win, dx, dy, TK_FLAG_COLLAPSE);
+	}
 }
 
 void edit__enter(void *self)
 {
 	struct edit *ed = self;
+	struct tk_block *win = ed->win;
 	ed->cx = 0;
-	edit__move(self, 0, 1);
-	tk_block__add_text(ed->tk, ed->win, "\n", 1);
+	edit__move(self, 0, 1, 0);
+	tk_block__add_text(ed->tk, win, "\n", 1, win->selection);
 
+}
+
+void edit__del(void *self)
+{
+	struct edit *ed = self;
+	struct tk_block *win = ed->win;
+	tk_block__move(ed->tk, ed->win, 1, 0, TK_FLAG_END);
+	tk_block__add_text(ed->tk, win, "", 0, win->selection);
 }
 
 void edit__backspace(void *self)
 {
-	edit__move(self, -1,0);
+	struct edit *ed = self;
+	struct tk_block *win = ed->win;
+	tk_block__move(ed->tk, ed->win, -1, 0, TK_FLAG_START);
+	tk_block__add_text(ed->tk, win, "", 0, win->selection);
 }
+
 
 void edit__alt(void *self, int key)
 {
@@ -131,9 +148,8 @@ void edit__special(void *self)
 	case 2: /* insert */
 		break;
 	case 3:
-		/*FIXME foward delete*/
-		edit__print(self, " ");
-		edit__move(self, -1,0);
+		/* foward delete*/
+		edit__del(self);
 		break;
 	case 4: /* end */
 	case 5: /* page up */
@@ -146,7 +162,10 @@ void edit__special(void *self)
 
 void edit__machine(void *self, char *buf, int l)
 {
+	int n = 1;
+	int shift = 0;
 	struct edit *ed = self;
+	struct tk_block *win = ed->win;
 	if (l < 1) {
 		return;
 	}
@@ -166,10 +185,18 @@ void edit__machine(void *self, char *buf, int l)
 		} else if (buf[0] == '\n') {
 			edit__enter(self);
 		} else {
-			tk_block__add_text(ed->tk, ed->win, buf, 1);
+			while (n < l) {
+				if (buf[n] == '\033') {
+					break;
+				}
+				n++;
+			}
+			tk_block__add_text(ed->tk, 
+					win, buf, n, win->selection);
 		}
+		l -= n;
 		if (l > 1) {
-			edit__machine(self, buf + 1, l - 1);
+			edit__machine(self, buf + n, l);
 		}
 		return;
 	case 2:
@@ -206,18 +233,23 @@ void edit__machine(void *self, char *buf, int l)
 				ed->arg[ed->index] = 0;
 			}
 		} else {
+			if (ed->index == 1 && ed->arg[0] == 1 && 
+					ed->arg[1] == 2) 
+			{
+				shift = 1;
+			}
 			switch (buf[0]) {
 			case 'A':
-				edit__move(self,0,-1);
+				edit__move(self,0,-1,shift);
 				break;
 			case 'B':
-				edit__move(self,0,1);
+				edit__move(self,0,1,shift);
 				break;
 			case 'C':
-				edit__move(self,1,0);
+				edit__move(self,1,0,shift);
 				break;
 			case 'D':
-				edit__move(self,-1,0);
+				edit__move(self,-1,0,shift);
 				break;
 			case '~':
 				edit__special(self);

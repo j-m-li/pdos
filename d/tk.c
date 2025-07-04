@@ -65,7 +65,7 @@ int tk__measure_string(struct tk *tk, char *txt, int len,
 			i++;
 			break;
 		}
-		if (txt[i] <= 0x7F) {
+		if ((txt[i] & 0xFF) <= 0x7F) {
 			if (txt[i] == '\t') {
 
 			}
@@ -98,6 +98,29 @@ void tk__move_to(struct tk *tk, int x, int y)
 	tk__printn(tk, x + 1);
 	tk__print(tk, "H");
 }
+#include <stdio.h>
+void tk__clear_rect(struct tk *tk, int x, int y, int w, int h )
+{
+	int i, l, k;
+/*	
+	if (x == 0 && (w == 0 || h == 0)) {
+		tk__move_to(tk, x, y);
+		tk->std->print(" ", 1);
+	}*/
+
+	for (i = y; h > 0; i++,h--) {
+		tk__move_to(tk, x, i);
+		l = 10;
+		for (k = w; k > 0; k -= 10) {
+			if (k < 10) {
+				l = k;
+			}
+			tk->std->print("          ", l);
+		}
+	}
+	tk__move_to(tk, 0, 0);
+}
+
 
 void tk__print_status(struct tk *tk, char *txt, int a, int b)
 {
@@ -148,6 +171,7 @@ void *tk__init(struct std *std)
 	tk->draw_string = tk__draw_string;
 	tk->measure_string = tk__measure_string;
 	tk->move_to = tk__move_to;
+	tk->clear_rect = tk__clear_rect;
 	tk->print_status = tk__print_status;
 	tk->show_cursor = tk__show_cursor;
 	tk->hide_cursor = tk__hide_cursor;

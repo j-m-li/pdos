@@ -22,6 +22,7 @@ struct tk {
 	int (*measure_string)(struct tk *tk, char *txt, int len, 
 			int *width, int *height, int *ascent);
 	void (*move_to)(struct tk *tk, int x, int y);
+	void (*clear_rect)(struct tk *tk, int x, int y, int w, int h);
 	void (*show_cursor)(struct tk *tk, int x, int y);
 	void (*hide_cursor)(struct tk *tk);
 	void (*set_rev)(struct tk *tk);
@@ -32,7 +33,9 @@ struct tk {
 enum {
 	TK_FLAG_DIRTY = 0x80000000,
 	TK_FLAG_REVERSE = 0x40000000,
-	TK_FLAG_COLLAPSE = 0x20000000
+	TK_FLAG_COLLAPSE = 0x20000000,
+	TK_FLAG_END = 0x10000000,
+	TK_FLAG_START = 0x08000000
 };
 
 #include "tk_style.h"

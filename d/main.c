@@ -167,7 +167,7 @@ void setup(void)
 	if (!win) {
 		exit(2);
 	}
-	tk_block__add_text(tk, win, "hello world", 11);
+	tk_block__add_text(tk, win, "hello world", 11, (void*)0);
 	edit = edit__init(tk, win);
 
 	edit__idle(edit);

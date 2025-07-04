@@ -12,6 +12,10 @@ extern "C" {
 	struct tk_inline *first_child; \
 	struct tk_inline *last_child; \
 	struct tk_range *selection; \
+	int dm_top; \
+	int dm_left; \
+	int dm_bottom; \
+	int dm_right; \
 	int x; \
 	int y; \
 	int w; \
@@ -22,7 +26,8 @@ struct tk_block {
 };
 
 void tk_block__init(struct tk *tk, void *self, int x, int y, int w, int h);
-void *tk_block__add_text(struct tk *tk, void *self, char *txt, int len);
+void *tk_block__add_text(struct tk *tk, void *self, char *txt, int len,
+		struct tk_range *selection);
 void tk_block__draw(struct tk *tk, void *self, int flags);
 void tk_block__move(struct tk *tk, void *self, int dx, int dy, int flags);
 
