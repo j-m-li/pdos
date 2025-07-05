@@ -106,7 +106,6 @@ void edit__enter(void *self)
 	struct edit *ed = self;
 	struct tk_block *win = ed->win;
 	ed->cx = 0;
-	edit__move(self, 0, 1, 0);
 	tk_block__add_text(ed->tk, win, "\n", 1, win->selection);
 
 }
