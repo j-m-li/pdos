@@ -511,7 +511,7 @@ void *tk_block__add_text(struct tk *tk, void *self_, char *txt, int len,
 	return inli;
 }
 
-void tk_block__measure(struct tk *tk, void *self_, struct tk_pos pos)
+void tk_block__measure(struct tk *tk, void *self_, struct tk_pos *pos)
 {
 	struct tk_block *self = self_;
 	struct tk_range *r;
@@ -597,7 +597,7 @@ void tk_block__measure(struct tk *tk, void *self_, struct tk_pos pos)
 				r->start_container = self->last_child;
 				r->end_container = self->last_child;
 				r->flags |= TK_FLAG_DIRTY;
-  				r->x = pos.x;
+  				r->x = pos->x;
 				r->y = y;
 				r->h = h;
 				r->w = 0;
@@ -639,12 +639,14 @@ void tk_block__measure(struct tk *tk, void *self_, struct tk_pos pos)
 }
 
 void tk_block__draw_line(struct tk *tk, struct tk_block *self,
-		struct tk_range *r, struct tk_pos pos)
+		struct tk_range *r, struct tk_pos *pos_)
 {	
 	int c;
 	struct tk_range *s = self->selection;
-	pos.x += r->x;
-	pos.y += r->y;
+	struct tk_pos pos;
+	pos.x = pos_->x + r->x;
+	pos.y = pos_->y + r->y;
+	pos.flags = pos_->flags;
 	pos.col = 0;
 	tk->move_to(tk, pos.x, pos.y);
 	if (r->start_container == r->end_container) {
@@ -657,7 +659,7 @@ void tk_block__draw_line(struct tk *tk, struct tk_block *self,
 			if (r->start_offset < s->start_offset) {
 				pos.col = tk_inline__draw(tk, 
 					r->start_container, 
-					r->start_offset, s->start_offset, pos);
+					r->start_offset, s->start_offset, &pos);
 			}
 			if (s->start_offset >= r->start_offset &&
 					s->end_offset <= r->end_offset)
@@ -671,14 +673,14 @@ void tk_block__draw_line(struct tk *tk, struct tk_block *self,
 				pos.col += tk_inline__draw(tk, 
 						s->start_container, 
 						s->start_offset, 
-						s->end_offset, pos);
+						s->end_offset, &pos);
 				tk->clr_rev(tk);
 		} else if (s->start_offset >= r->start_offset) {
 				tk->set_rev(tk);
 				pos.col += tk_inline__draw(tk, 
 						s->start_container, 
 						s->start_offset, 
-						r->end_offset, pos);
+						r->end_offset, &pos);
 				tk->clr_rev(tk);
 			} else if (s->end_offset <= r->end_offset) {
 				tk->show_cursor(tk, 
@@ -688,20 +690,20 @@ void tk_block__draw_line(struct tk *tk, struct tk_block *self,
 				pos.col += tk_inline__draw(tk, 
 						s->start_container, 
 						r->start_offset, 
-						s->end_offset, pos);
+						s->end_offset, &pos);
 				tk->clr_rev(tk);
 			} else {
 				tk->set_rev(tk);
 				pos.col += tk_inline__draw(tk, 
 						s->start_container, 
 						r->start_offset, 
-						r->end_offset, pos);
+						r->end_offset, &pos);
 				tk->clr_rev(tk);
 			}
 			tk->move_to(tk, pos.x + pos.col, pos.y);
 			if (r->end_offset >  s->end_offset) {
 				tk_inline__draw(tk, r->start_container, 
-					s->end_offset, r->end_offset, pos);
+					s->end_offset, r->end_offset, &pos);
 			}
 		} else {
 			if (s && s->start_container == s->end_container &&
@@ -713,7 +715,7 @@ void tk_block__draw_line(struct tk *tk, struct tk_block *self,
 						pos.y);
 			}
 			pos.col = tk_inline__draw(tk, r->start_container, 
-					r->start_offset, r->end_offset, pos);
+					r->start_offset, r->end_offset, &pos);
 			if (s && s->start_container == s->end_container &&
 				r->start_container == s->end_container &&
 				s->start_offset == r->end_offset)
@@ -743,18 +745,21 @@ void tk_block__clear(struct tk *tk, void *self_, int flags)
 
 }
 
-void tk_block__draw(struct tk *tk, void *self_, struct tk_pos pos)
+void tk_block__draw(struct tk *tk, void *self_, struct tk_pos *pos_)
 {
 	struct tk_block *self = self_;
 	struct tk_range *r;
+	struct tk_pos pos;
 	if (self->draw) {
-		self->draw(tk, self, pos);
+		self->draw(tk, self, pos_);
 		return;
 	}
-	pos.x += self->x;
-	pos.y += self->y;
+	pos.flags = pos_->flags;
+	pos.col = pos_->col;
+	pos.x = pos_->x + self->x;
+	pos.y = pos_->y + self->y;
 	if (self->flags & TK_FLAG_DIRTY) {
-		tk_block__measure(tk, self, pos);
+		tk_block__measure(tk, self, &pos);
 	} else if(!(pos.flags & TK_FLAG_DIRTY)) {
 		return;	
 	}
@@ -763,7 +768,7 @@ void tk_block__draw(struct tk *tk, void *self_, struct tk_pos pos)
 	while (r) {
 		if ((r->flags & TK_FLAG_DIRTY) || (pos.flags & TK_FLAG_DIRTY)) {
 			r->flags &= ~TK_FLAG_DIRTY;
-			tk_block__draw_line(tk, self, r, pos);
+			tk_block__draw_line(tk, self, r, &pos);
 		}
 		r = r->next;
 	}

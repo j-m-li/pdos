@@ -292,7 +292,7 @@ int edit__idle(void *self)
 	ed->tk->pos.x = 0;
 	ed->tk->pos.y = 0;
 	ed->tk->pos.col = 0;
-	tk_block__draw(ed->tk, ed->tk->root, ed->tk->pos);
+	tk_block__draw(ed->tk, ed->tk->root, &ed->tk->pos);
 	ed->tk->show_cursor(ed->tk, ed->tk->cursor_x, ed->tk->cursor_y);
 	ed->std->flush();
 	return 0;

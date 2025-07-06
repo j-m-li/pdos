@@ -215,10 +215,10 @@ void *tk__init(struct std *std)
 	return tk;	
 }
 
-void tk__damage(struct tk *self, int x, int y, int w, int h, struct tk_pos pos)
+void tk__damage(struct tk *self, int x, int y, int w, int h, struct tk_pos *pos)
 {
-	x += pos.x;
-	y += pos.y;
+	x += pos->x;
+	y += pos->y;
         if (x < self->dm_left) {
                 self->dm_left = x;
         }
@@ -256,6 +256,7 @@ void *tk__create(struct tk *tk, int type)
 		m = tk->std->alloc(sizeof(struct tk_range));
 		break;
 	case TK_BLOCK:
+	case TK_WIDGET:
 	case TK_INLINE_BLOCK:
 		m = tk->std->alloc(sizeof(struct tk_block));
 		break;

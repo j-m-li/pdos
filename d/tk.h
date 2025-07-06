@@ -65,7 +65,7 @@ extern "C" {
 
 void *tk__init(struct std *std);
 void *tk__create(struct tk *tk, int type);
-void tk__damage(struct tk *tk, int x, int y, int w, int h, struct tk_pos pos);
+void tk__damage(struct tk *tk, int x, int y, int w, int h, struct tk_pos *pos);
 
 void *tk_text(struct tk *tk, void *data, int len);
 void *tk_inline(struct tk *tk);
@@ -74,8 +74,8 @@ void *tk_range(struct tk *tk, struct tk_inline *sc, int so,
 
 void *tk_block(struct tk *tk, int x, int y, int w, int h, void *parent);
 
-void *tk_tab(struct tk *tk);
-void tk_tab__init(struct tk *tk, void *self);
+void *tk_widget(struct tk *tk);
+void tk_widget__init(struct tk *tk, void *self);
 
 #ifdef __cplusplus
 }

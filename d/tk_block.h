@@ -13,7 +13,7 @@ extern "C" {
 	struct tk_inline *last_child; \
 	struct tk_range *selection; \
 	struct tk_block *parent; \
-	void (*draw)(struct tk *tk, void *self, struct tk_pos p); \
+	void (*draw)(struct tk *tk, void *self, struct tk_pos *p); \
 	int (*event)(struct tk *tk, void *self, void *event); \
 	int x; \
 	int y; \
@@ -30,7 +30,7 @@ void *tk_block__add_text(struct tk *tk, void *self, char *txt, int len,
 		struct tk_range *selection);
 void *tk_block__add_elem(struct tk *tk, void *self, void *elem,
 		struct tk_range *selection);
-void tk_block__draw(struct tk *tk, void *self, struct tk_pos pos);
+void tk_block__draw(struct tk *tk, void *self, struct tk_pos *pos);
 void tk_block__move_cursor(struct tk *tk, void *self, 
 		int dx, int dy, int flags);
 

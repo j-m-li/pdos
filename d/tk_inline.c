@@ -16,7 +16,7 @@ void *tk_inline(struct tk *tk)
 }
 
 int  tk_inline__measure_string(struct tk *tk, void *self_, int start, 
-		int end, int *w, int *h, int *a, struct tk_pos pos)
+		int end, int *w, int *h, int *a, struct tk_pos *pos)
 {
 	struct tk_inline *self = self_;
 	int s;
@@ -47,7 +47,7 @@ int  tk_inline__measure_string(struct tk *tk, void *self_, int start,
 */
 			tk->measure_string(tk, " ", 1, &w1, h, a);
 			if (w1 > 0) {
-				n = (pos.col + *w) / w1;
+				n = (pos->col + *w) / w1;
 				n = 8 - (n % 8);
 				*w += n * w1;
 			} else {
@@ -78,7 +78,7 @@ int  tk_inline__measure_string(struct tk *tk, void *self_, int start,
 }
 
 int  tk_inline__draw(struct tk *tk, void *self_, int start, 
-		int end, struct tk_pos pos)
+		int end, struct tk_pos *pos)
 {
 	struct tk_inline *self = self_;
 	int w = 0;
@@ -107,7 +107,7 @@ int  tk_inline__draw(struct tk *tk, void *self_, int start,
 							" ", 1, &w1, &h, &a);
 				n = 8;
 				if (w1 > 0) {
-					n = (pos.col + w) / w1;
+					n = (pos->col + w) / w1;
 					n = 8 - (n % 8);
 				}
 				w += tk->draw_string(tk, "        ", n);
