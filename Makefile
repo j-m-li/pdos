@@ -15,7 +15,7 @@ wa:
 		d/main.c \
 		d/edit.c \
 		d/tk.c d/tk_inline.c d/tk_style.c d/tk_block.c d/tk_text.c \
-		d/tk_range.c 
+		d/tk_range.c d/tk_tab.c
 		zcat 3o3_exe.cmd.gz > test.cmd
 		cat edit.wasm >> test.cmd
 		http-server
@@ -26,7 +26,7 @@ edit: d/edit.c d/main.c d/std.h
 	cc -D C90=1 \
 		-I d/ -o edit.exe d/main.c d/edit.c \
 		d/tk.c d/tk_inline.c d/tk_style.c d/tk_block.c d/tk_text.c \
-		d/tk_range.c
+		d/tk_range.c d/tk_tab.c
 
 mount:
 	mkdir -p mnt
@@ -37,6 +37,7 @@ run:
 	-drive file=fat:rw:./d,id=fat32,format=raw,index=1
 
 
+pdos: pdos.vhd run
 
 pdos.vhd: pdos.zip
 	unzip pdos.zip

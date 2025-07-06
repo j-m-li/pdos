@@ -5,7 +5,6 @@
 struct edit {
 	struct std *std;
 	struct tk *tk;
-	void *win;
 	int state;
 	int w;
 	int h;
@@ -73,7 +72,7 @@ void *edit__init(struct tk *tk, void *win)
 	static struct edit ed;
 	ed.std = tk->std;
 	ed.tk = tk;
-	ed.win = win;
+	ed.tk->root = win;
 	ed.state = 0;
   	ed.cw = 8;
 	ed.ch = 12;
@@ -81,7 +80,8 @@ void *edit__init(struct tk *tk, void *win)
 	ed.h = 25;
 	ed.cx = 0;
 	ed.cy = 0;
-	edit__print(&ed, "\033c\033[2J\033[9999;9999H\033[6n\n");
+	edit__print(&ed, "\033c\033[2J\033[9999;9999H\033[6n");
+	edit__flush(&ed);
 	return &ed;
 }
 
@@ -95,16 +95,24 @@ void edit__move(void *self, int dx, int dy, int shift)
 {
 	struct edit *ed = self;
 	if (shift) {
-		tk_block__move(ed->tk, ed->win, dx, dy, TK_FLAG_END);
+		tk_block__move_cursor(ed->tk, ed->tk->root, dx, dy, TK_FLAG_END);
 	} else {
-		tk_block__move(ed->tk, ed->win, dx, dy, TK_FLAG_COLLAPSE);
+		tk_block__move_cursor(ed->tk, ed->tk->root, 
+				dx, dy, TK_FLAG_COLLAPSE);
 	}
+}
+
+void edit__tab(void *self)
+{
+	struct edit *ed = self;
+	struct tk_block *win = ed->tk->root;
+	tk_block__add_text(ed->tk, win, "\t", 1, win->selection);
 }
 
 void edit__enter(void *self)
 {
 	struct edit *ed = self;
-	struct tk_block *win = ed->win;
+	struct tk_block *win = ed->tk->root;
 	ed->cx = 0;
 	tk_block__add_text(ed->tk, win, "\n", 1, win->selection);
 
@@ -113,16 +121,16 @@ void edit__enter(void *self)
 void edit__del(void *self)
 {
 	struct edit *ed = self;
-	struct tk_block *win = ed->win;
-	tk_block__move(ed->tk, ed->win, 1, 0, TK_FLAG_END);
+	struct tk_block *win = ed->tk->root;
+	tk_block__move_cursor(ed->tk, win, 1, 0, TK_FLAG_END);
 	tk_block__add_text(ed->tk, win, "", 0, win->selection);
 }
 
 void edit__backspace(void *self)
 {
 	struct edit *ed = self;
-	struct tk_block *win = ed->win;
-	tk_block__move(ed->tk, ed->win, -1, 0, TK_FLAG_START);
+	struct tk_block *win = ed->tk->root;
+	tk_block__move_cursor(ed->tk, win, -1, 0, TK_FLAG_START);
 	tk_block__add_text(ed->tk, win, "", 0, win->selection);
 }
 
@@ -164,7 +172,7 @@ void edit__machine(void *self, char *buf, int l)
 	int n = 1;
 	int shift = 0;
 	struct edit *ed = self;
-	struct tk_block *win = ed->win;
+	struct tk_block *win = ed->tk->root;
 	if (l < 1) {
 		return;
 	}
@@ -181,6 +189,8 @@ void edit__machine(void *self, char *buf, int l)
 			return;
 		} else if (buf[0] == '\b' || buf[0] == 0x7F) {
 			edit__backspace(self);
+		} else if (buf[0] == '\t') {
+			edit__tab(self);
 		} else if (buf[0] == '\n') {
 			edit__enter(self);
 		} else {
@@ -232,6 +242,7 @@ void edit__machine(void *self, char *buf, int l)
 				ed->arg[ed->index] = 0;
 			}
 		} else {
+			ed->tk->print_status(ed->tk, "JML ", ed->index, ed->arg[0]);
 			if (ed->index == 1 && ed->arg[0] == 1 && 
 					ed->arg[1] == 2) 
 			{
@@ -275,8 +286,13 @@ int edit__event(void *self, char *buf, int l)
 int edit__idle(void *self)
 {
 	struct edit *ed = self;
+
 	ed->tk->hide_cursor(ed->tk);
-	tk_block__draw(ed->tk, ed->win, TK_FLAG_DIRTY);
+	ed->tk->pos.flags = TK_FLAG_DIRTY;
+	ed->tk->pos.x = 0;
+	ed->tk->pos.y = 0;
+	ed->tk->pos.col = 0;
+	tk_block__draw(ed->tk, ed->tk->root, ed->tk->pos);
 	ed->tk->show_cursor(ed->tk, ed->tk->cursor_x, ed->tk->cursor_y);
 	ed->std->flush();
 	return 0;

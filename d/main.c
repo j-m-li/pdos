@@ -110,7 +110,17 @@ void flush()
 
 int print(char *buf, int l)
 {
+	int i;
 	if (!buf) return -1;
+	for (i = 0; i < l; i++) {
+		if (buf[i] == '\n') {
+			__builtin_trap();
+		} else if (buf[i] == '\r') {
+			__builtin_trap();
+		} else if (buf[i] == '\t') {
+			__builtin_trap();
+		}
+	}
 	fwrite(buf, 1, l, stdout);
 	/*
 	int i;
@@ -147,6 +157,7 @@ static struct std std;
 
 void setup(void)
 {
+	char *txt;
 	setvbuf(stdin, NULL, _IONBF, 0);
 
 #ifdef __WIN32__
@@ -163,11 +174,12 @@ void setup(void)
 	if (!tk) {
 		exit(1);
 	}
-	win = tk_block(tk, 0, 0, TK_FULL, TK_FULL);
+	win = tk_block(tk, 0, 0, TK_FULL, TK_FULL, (void*)0);
 	if (!win) {
 		exit(2);
 	}
-	tk_block__add_text(tk, win, "hello world", 11, (void*)0);
+	txt = "hello world\nmix\ttop\n\tok\n\t";
+	tk_block__add_text(tk, win, txt, strlen(txt), (void*)0); 
 	edit = edit__init(tk, win);
 
 	edit__idle(edit);

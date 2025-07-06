@@ -12,10 +12,9 @@ extern "C" {
 	struct tk_inline *first_child; \
 	struct tk_inline *last_child; \
 	struct tk_range *selection; \
-	int dm_top; \
-	int dm_left; \
-	int dm_bottom; \
-	int dm_right; \
+	struct tk_block *parent; \
+	void (*draw)(struct tk *tk, void *self, struct tk_pos p); \
+	int (*event)(struct tk *tk, void *self, void *event); \
 	int x; \
 	int y; \
 	int w; \
@@ -25,11 +24,16 @@ struct tk_block {
 	TK_BLOCK__STRUCT;
 };
 
-void tk_block__init(struct tk *tk, void *self, int x, int y, int w, int h);
+void tk_block__init(struct tk *tk, void *self, int x, int y, 
+		int w, int h, void *parent);
 void *tk_block__add_text(struct tk *tk, void *self, char *txt, int len,
 		struct tk_range *selection);
-void tk_block__draw(struct tk *tk, void *self, int flags);
-void tk_block__move(struct tk *tk, void *self, int dx, int dy, int flags);
+void *tk_block__add_elem(struct tk *tk, void *self, void *elem,
+		struct tk_range *selection);
+void tk_block__draw(struct tk *tk, void *self, struct tk_pos pos);
+void tk_block__move_cursor(struct tk *tk, void *self, 
+		int dx, int dy, int flags);
+
 
 #ifdef __cplusplus
 }

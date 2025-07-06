@@ -57,8 +57,11 @@ int tk__measure_string(struct tk *tk, char *txt, int len,
 	*h = 1;
 	*a = 1;
 	*w = 0;
+	if (!txt || len < 1) {
+		return 0;
+	}
 	for (i = 0; i < len; i++) { /* UTF-8 */
-		if (txt[i] == '\r' && txt[i+1] == '\n') {
+		if (txt[i] == '\r' && i < (len - 1) && txt[i+1] == '\n') {
 			i += 2;
 			break;
 		} else if (txt[i] == '\n') {
@@ -67,7 +70,7 @@ int tk__measure_string(struct tk *tk, char *txt, int len,
 		}
 		if ((txt[i] & 0xFF) <= 0x7F) {
 			if (txt[i] == '\t') {
-
+				__builtin_trap();	
 			}
 			*w += 1;
 		} else if (((int)txt[i] & 0xFF) >= 0xC0) { 
@@ -98,7 +101,6 @@ void tk__move_to(struct tk *tk, int x, int y)
 	tk__printn(tk, x + 1);
 	tk__print(tk, "H");
 }
-#include <stdio.h>
 void tk__clear_rect(struct tk *tk, int x, int y, int w, int h )
 {
 	int i, l, k;
@@ -107,6 +109,29 @@ void tk__clear_rect(struct tk *tk, int x, int y, int w, int h )
 		tk__move_to(tk, x, y);
 		tk->std->print(" ", 1);
 	}*/
+	if (y < 0) {
+		h += y;
+	} else if (y >= tk->h) {
+		y = tk->h;
+		h = 0;
+	}
+	if (h < 0) {
+		h = 0;
+	} else if (h >= tk->h) {
+		h = tk->h;
+	}
+
+	if (x < 0) {
+		w += x;
+	} else if (x >= tk->w) {
+		x = tk->w;
+		w = 0;
+	}
+	if (w < 0) {
+		w = 0;
+	} else if (w >= tk->w) {
+		w = tk->w;
+	}
 
 	for (i = y; h > 0; i++,h--) {
 		tk__move_to(tk, x, i);
@@ -168,6 +193,16 @@ void *tk__init(struct std *std)
 	tk->h = 24;
 	tk->cursor_x = 0;
 	tk->cursor_y = 0;
+	tk->pos.x = 0;
+	tk->pos.y = 0;
+	tk->pos.flags = 0;
+	tk->pos.col = 0;
+
+	tk->dm_top = 10000;
+        tk->dm_left = 10000;
+        tk->dm_right = -10000;
+        tk->dm_bottom = -10000;
+
 	tk->draw_string = tk__draw_string;
 	tk->measure_string = tk__measure_string;
 	tk->move_to = tk__move_to;
@@ -180,11 +215,38 @@ void *tk__init(struct std *std)
 	return tk;	
 }
 
+void tk__damage(struct tk *self, int x, int y, int w, int h, struct tk_pos pos)
+{
+	x += pos.x;
+	y += pos.y;
+        if (x < self->dm_left) {
+                self->dm_left = x;
+        }
+        if (y < self->dm_top) {
+                self->dm_top = y;
+        }
+        if (w < 0) {
+                w = 0;
+        }
+        if (h < 0) {
+                h = 0;
+        }
+        w += x;
+        h += y;
+        if (w > self->dm_right) {
+                self->dm_right = w;
+        }
+        if (h > self->dm_bottom) {
+                self->dm_bottom = h;
+	}
+}
+
 void *tk__create(struct tk *tk, int type)
 {
 	void *m;
 	switch (type) {
 	case TK_TEXT:
+	case TK_TAB:
 		m = tk->std->alloc(sizeof(struct tk_text));
 		break;
 	case TK_INLINE:
@@ -194,6 +256,7 @@ void *tk__create(struct tk *tk, int type)
 		m = tk->std->alloc(sizeof(struct tk_range));
 		break;
 	case TK_BLOCK:
+	case TK_INLINE_BLOCK:
 		m = tk->std->alloc(sizeof(struct tk_block));
 		break;
 	default:

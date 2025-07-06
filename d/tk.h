@@ -10,14 +10,27 @@ struct tk__call {
 	void (*dispose)(void *tk, void *self);
 };
 
+struct tk_pos {
+	int x;
+	int y;
+	int flags;
+	int col;
+};
+
 struct tk {
 	TK__STRUCT;
 	struct tk__call *call;
 	struct std *std;
+	struct tk_block *root;
 	int w;
 	int h;
+	struct tk_pos pos;
 	int cursor_x;
 	int cursor_y;
+        int dm_top; 
+        int dm_left; 
+        int dm_bottom;
+        int dm_right;
 	int (*draw_string)(struct tk *tk, char *txt, int len);
 	int (*measure_string)(struct tk *tk, char *txt, int len, 
 			int *width, int *height, int *ascent);
@@ -35,7 +48,8 @@ enum {
 	TK_FLAG_REVERSE = 0x40000000,
 	TK_FLAG_COLLAPSE = 0x20000000,
 	TK_FLAG_END = 0x10000000,
-	TK_FLAG_START = 0x08000000
+	TK_FLAG_START = 0x08000000,
+	TK_FLAG_EMPTY = 0x04000000
 };
 
 #include "tk_style.h"
@@ -51,11 +65,18 @@ extern "C" {
 
 void *tk__init(struct std *std);
 void *tk__create(struct tk *tk, int type);
+void tk__damage(struct tk *tk, int x, int y, int w, int h, struct tk_pos pos);
+
 void *tk_text(struct tk *tk, void *data, int len);
 void *tk_inline(struct tk *tk);
 void *tk_range(struct tk *tk, struct tk_inline *sc, int so, 
 		struct tk_inline *ec, int eo);
-void *tk_block(struct tk *tk, int x, int y, int w, int h);
+
+void *tk_block(struct tk *tk, int x, int y, int w, int h, void *parent);
+
+void *tk_tab(struct tk *tk);
+void tk_tab__init(struct tk *tk, void *self);
+
 #ifdef __cplusplus
 }
 #endif

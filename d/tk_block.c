@@ -3,9 +3,10 @@
 
 
 void tk_block__init(struct tk *tk, void *self_, 
-		int x, int y, int w, int h)
+		int x, int y, int w, int h, void *parent)
 {
 	struct tk_block *self = self_;
+	self->parent = parent;
 	self->x = x;
 	self->y = y;
 	if (w < 0) {
@@ -18,21 +19,19 @@ void tk_block__init(struct tk *tk, void *self_,
 	} else {
 		self->h = h;
 	}
-	self->dm_top = 10000;
-	self->dm_left = 10000;
-	self->dm_right = -10000;
-	self->dm_bottom = -10000;
 
 	self->first_child = (void*)0;
 	self->last_child = (void*)0;
 	self->lines = (void*)0;
+	self->draw = (void*)0;
+	self->event = (void*)0;
 }
 
-void *tk_block(struct tk *tk, int x, int y, int w, int h)
+void *tk_block(struct tk *tk, int x, int y, int w, int h, void *parent)
 {
 	struct tk_block *self = tk__create(tk, TK_BLOCK);
 	tk_inline__init(tk, self);
-	tk_block__init(tk, self, x, y, w, h);
+	tk_block__init(tk, self, x, y, w, h, parent);
 	return self;
 }
 
@@ -146,7 +145,6 @@ void *tk_block__up(struct tk *tk, void *self_, struct tk_inline *c, int *o)
 {
 	struct tk_block *self = self_;
 	struct tk_inline *n;
-	*o = 0;
 	return (void*)0;
 }
 
@@ -154,7 +152,6 @@ void *tk_block__down(struct tk *tk, void *self_, struct tk_inline *c, int *o)
 {
 	struct tk_block *self = self_;
 	struct tk_inline *n;
-	*o = 0;
 	return (void*)0;
 }
 
@@ -186,7 +183,8 @@ void *tk_block__previous(struct tk *tk, void *self_, struct tk_inline *c)
 }
 
 
-void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
+void tk_block__move_cursor(struct tk *tk, void *self_, 
+		int dx, int dy, int flags)
 {
 	struct tk_block *self = self_;
 	struct tk_inline *c = self->first_child;
@@ -329,7 +327,7 @@ void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
 	}
 	line0 = line;
 	while (dy > 0) {
-		if (line && line->next) {
+		if (line && line->next && line->next->start_container) {
 			line = line->next;
 			l = line->end_offset - line->start_offset;
 			if (x > l) {
@@ -457,7 +455,20 @@ void tk_block__move(struct tk *tk, void *self_, int dx, int dy, int flags)
 	} else {
 		// FIXME
 	}
-	tk->print_status(tk, "            POS ", r->start_offset, r->end_offset);
+}
+void *tk_block__add_elem(struct tk *tk, void *self_, void *elem_,
+		struct tk_range *r)
+{
+	struct tk_block *self = self_;
+	struct tk_block *elem = elem_;
+	struct tk_inline *inli = (void*)0;
+	if (!elem) {
+		return elem;
+	}
+
+	self->flags |= TK_FLAG_DIRTY;
+
+	return elem;
 }
 
 void *tk_block__add_text(struct tk *tk, void *self_, char *txt, int len,
@@ -499,42 +510,15 @@ void *tk_block__add_text(struct tk *tk, void *self_, char *txt, int len,
 
 	return inli;
 }
-#include <stdio.h>
-void tk_block__damage(struct tk *tk, void *self_, int x, int y, int w, int h)
-{
-	struct tk_block *self = self_;
-	x += self->x;
-	y += self->y;
-	if (x < self->dm_left) {
-		self->dm_left = x;
-	}
-	if (y < self->dm_top) {
-		self->dm_top = y;
-	}
-	if (w < 0) {
-		w = 0;
-	}
-	if (h < 0) {
-		h = 0;
-	}
-	w += x;
-	h += y;
-	if (w > self->dm_right) {
-		self->dm_right = w;
-	}
-	if (h > self->dm_bottom) {
-		self->dm_bottom = h;
-	}
-}
 
-void tk_block__measure(struct tk *tk, void *self_, int flags)
+void tk_block__measure(struct tk *tk, void *self_, struct tk_pos pos)
 {
 	struct tk_block *self = self_;
 	struct tk_range *r;
 	int w, h, a;
 	int x;
-	int y = 0;
 	int o = 0;
+	int y = 0;
 	char *d;
 	int fix = 0;
 	if (!self->lines) {
@@ -545,7 +529,7 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 	}
 	r = self->lines;
 	while (r) {
-		if (r->flags & TK_FLAG_DIRTY) {
+		if (r->flags & (TK_FLAG_DIRTY | TK_FLAG_EMPTY) ) {
 			break;
 		}
 		y = r->y + r->h;
@@ -560,7 +544,7 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 			r->start_container = self->last_child;
 			r->end_container = self->last_child;
 			r->start_offset = o;
-			tk_block__damage(tk, self, r->x, r->y, r->w, r->h);
+			tk__damage(tk, r->x, r->y, r->w, r->h, pos);
 			if (!fix && o == 0 && d[0] == '\n' && 
 					self->last_child->len == 1)
 			{
@@ -575,10 +559,13 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 				tk->measure_string(tk,"  ", 2, &w, &h, &a);
 				w = 0;
 			} else {
-				o += tk->measure_string(tk, d + o,
-					self->last_child->len - o, &w, &h, &a);
+				o += tk_inline__measure_string(tk, 
+					r->start_container,
+					o,
+					self->last_child->len, 
+					&w, &h, &a, pos);
 			}
-			tk_block__damage(tk, self, x, y, w, h);
+			tk__damage(tk, x, y, w, h, pos);
 			r->x = x;
 			r->y = y;
 			r->h = h;
@@ -601,15 +588,16 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 				} else {
 					r = r->next;
 					r->flags |= TK_FLAG_DIRTY;
-					tk_block__damage(tk, self,
-						       	r->x, r->y, r->w, r->h);
+					r->flags &= ~TK_FLAG_EMPTY;
+					tk__damage(tk, r->x, r->y, 
+							r->w, r->h, pos);
 				}
 				r->end_offset = o;
 				r->start_offset = o;
 				r->start_container = self->last_child;
 				r->end_container = self->last_child;
 				r->flags |= TK_FLAG_DIRTY;
-  				r->x = 0;
+  				r->x = pos.x;
 				r->y = y;
 				r->h = h;
 				r->w = 0;
@@ -625,19 +613,24 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 						r->start_container->len);
 				} else {
 					r->flags |= TK_FLAG_DIRTY;
-					tk_block__damage(tk, self,
-						       	r->x, r->y, r->w, r->h);
+					r->flags &= ~TK_FLAG_EMPTY;
+					tk__damage(tk, r->x, r->y, 
+							r->w, r->h, pos);
 				}
 			}
 			r = r->next;
 		}
 		while (r) {
-			r->flags |= TK_FLAG_DIRTY;
-			tk_block__damage(tk, self, r->x, r->y, r->w, r->h);
+			r->flags |= TK_FLAG_DIRTY | TK_FLAG_EMPTY;
+			tk__damage(tk, r->x, r->y, r->w, r->h, pos);
 			r->x = 0;
 			r->y = 0;
 			r->w = 0;
 			r->h = 0;
+			if (r != self->lines) {
+				r->start_container = (void*)0;
+				r->end_container = (void*)0;
+			}
 			r->start_offset = 0;
 			r->end_offset = 0;
 			r = r->next;
@@ -646,66 +639,69 @@ void tk_block__measure(struct tk *tk, void *self_, int flags)
 }
 
 void tk_block__draw_line(struct tk *tk, struct tk_block *self,
-		struct tk_range *r, int flags)
+		struct tk_range *r, struct tk_pos pos)
 {	
-	int o = 0;
 	int c;
 	struct tk_range *s = self->selection;
-	tk->move_to(tk, self->x + r->x, self->y + r->y);
+	pos.x += r->x;
+	pos.y += r->y;
+	pos.col = 0;
+	tk->move_to(tk, pos.x, pos.y);
 	if (r->start_container == r->end_container) {
 		if (s && s->start_container == s->end_container &&
 				r->start_container == s->end_container &&
 				s->start_offset < r->end_offset &&
 				s->end_offset > r->start_offset) 
 		{
-			o = 0;
+			pos.col = 0;
 			if (r->start_offset < s->start_offset) {
-				o = tk_inline__draw(tk, r->start_container, 
-					r->start_offset, s->start_offset);
+				pos.col = tk_inline__draw(tk, 
+					r->start_container, 
+					r->start_offset, s->start_offset, pos);
 			}
 			if (s->start_offset >= r->start_offset &&
 					s->end_offset <= r->end_offset)
 			{
 				tk->show_cursor(tk, 
-						self->x + r->x + o, 
-						self->y + r->y);
-				tk->move_to(tk, self->x + r->x + o, 
-						self->y + r->y);
+						pos.x + pos.col, 
+						pos.y);
+				tk->move_to(tk, pos.x + pos.col, 
+						pos.y);
 				tk->set_rev(tk);
-				o += tk_inline__draw(tk, 
+				pos.col += tk_inline__draw(tk, 
 						s->start_container, 
 						s->start_offset, 
-						s->end_offset);
+						s->end_offset, pos);
 				tk->clr_rev(tk);
 		} else if (s->start_offset >= r->start_offset) {
 				tk->set_rev(tk);
-				o += tk_inline__draw(tk, 
+				pos.col += tk_inline__draw(tk, 
 						s->start_container, 
 						s->start_offset, 
-						r->end_offset);
+						r->end_offset, pos);
 				tk->clr_rev(tk);
 			} else if (s->end_offset <= r->end_offset) {
 				tk->show_cursor(tk, 
-						self->x + r->x + o, 
-						self->y + r->y);
+						pos.x + pos.col, 
+						pos.y);
 				tk->set_rev(tk);
-				o += tk_inline__draw(tk, 
+				pos.col += tk_inline__draw(tk, 
 						s->start_container, 
 						r->start_offset, 
-						s->end_offset);
+						s->end_offset, pos);
 				tk->clr_rev(tk);
 			} else {
 				tk->set_rev(tk);
-				o += tk_inline__draw(tk, 
+				pos.col += tk_inline__draw(tk, 
 						s->start_container, 
 						r->start_offset, 
-						r->end_offset);
+						r->end_offset, pos);
 				tk->clr_rev(tk);
 			}
-			tk->move_to(tk, self->x + r->x + o, self->y + r->y);
+			tk->move_to(tk, pos.x + pos.col, pos.y);
 			if (r->end_offset >  s->end_offset) {
 				tk_inline__draw(tk, r->start_container, 
-					s->end_offset, r->end_offset);
+					s->end_offset, r->end_offset, pos);
 			}
 		} else {
 			if (s && s->start_container == s->end_container &&
@@ -713,18 +709,18 @@ void tk_block__draw_line(struct tk *tk, struct tk_block *self,
 				s->end_offset == r->start_offset) 
 			{
 				tk->show_cursor(tk, 
-						self->x + r->x + o, 
-						self->y + r->y);
+						pos.x + pos.col, 
+						pos.y);
 			}
-			o = tk_inline__draw(tk, r->start_container, 
-					r->start_offset, r->end_offset);
+			pos.col = tk_inline__draw(tk, r->start_container, 
+					r->start_offset, r->end_offset, pos);
 			if (s && s->start_container == s->end_container &&
 				r->start_container == s->end_container &&
 				s->start_offset == r->end_offset)
 			{
 					tk->show_cursor(tk, 
-						self->x + r->x + o, 
-						self->y + r->y);
+						pos.x + pos.col, 
+						pos.y);
 			}
 		}
 	} else {
@@ -734,50 +730,40 @@ void tk_block__draw_line(struct tk *tk, struct tk_block *self,
 
 void tk_block__clear(struct tk *tk, void *self_, int flags)
 {
-	
-	struct tk_block *self = self_;
-	int x, y, x1, y1;
-	x = self->dm_left;
-	y = self->dm_top;
-	x1 = self->dm_right;
-	y1 = self->dm_bottom;
-	if (x < 0) {
-		x = 0;
+	if (self_ != tk->root) {
+		return;
 	}
-	if (x1 > self->w) {
-		x1 = self->w;
-	}
-	if (y < 0) {
-		y = 0;
-	}
-	if (y1 > self->h) {
-		y1 = self->h;
-	}
-	x1 -= x;
-	y1 -= y;
-	tk->clear_rect(tk, x, y, x1, y1);
-	self->dm_top = 10000;
-	self->dm_left = 10000;
-	self->dm_right = -10000;
-	self->dm_bottom = -10000;
+	tk->clear_rect(tk, tk->dm_left, tk->dm_top, 
+			tk->dm_right - tk->dm_left,
+			tk->dm_bottom - tk->dm_top);
+	tk->dm_top = 10000;
+	tk->dm_left = 10000;
+	tk->dm_right = -10000;
+	tk->dm_bottom = -10000;
 
 }
 
-void tk_block__draw(struct tk *tk, void *self_, int flags)
+void tk_block__draw(struct tk *tk, void *self_, struct tk_pos pos)
 {
 	struct tk_block *self = self_;
 	struct tk_range *r;
+	if (self->draw) {
+		self->draw(tk, self, pos);
+		return;
+	}
+	pos.x += self->x;
+	pos.y += self->y;
 	if (self->flags & TK_FLAG_DIRTY) {
-		tk_block__measure(tk, self, flags);
-	} else if(!(flags & TK_FLAG_DIRTY)) {
+		tk_block__measure(tk, self, pos);
+	} else if(!(pos.flags & TK_FLAG_DIRTY)) {
 		return;	
 	}
-	tk_block__clear(tk, self, flags);
+	tk_block__clear(tk, self, pos.flags);
 	r = self->lines;
 	while (r) {
-		if ((r->flags & TK_FLAG_DIRTY) || (flags & TK_FLAG_DIRTY)) {
+		if ((r->flags & TK_FLAG_DIRTY) || (pos.flags & TK_FLAG_DIRTY)) {
 			r->flags &= ~TK_FLAG_DIRTY;
-			tk_block__draw_line(tk, self, r, flags);
+			tk_block__draw_line(tk, self, r, pos);
 		}
 		r = r->next;
 	}
