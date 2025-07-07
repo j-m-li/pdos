@@ -171,6 +171,7 @@ void edit__machine(void *self, char *buf, int l)
 {
 	int n = 1;
 	int shift = 0;
+	int ctrl = 0;
 	struct edit *ed = self;
 	struct tk_block *win = ed->tk->root;
 	if (l < 1) {
@@ -243,10 +244,11 @@ void edit__machine(void *self, char *buf, int l)
 			}
 		} else {
 			ed->tk->print_status(ed->tk, "JML ", ed->index, ed->arg[0]);
-			if (ed->index == 1 && ed->arg[0] == 1 && 
-					ed->arg[1] == 2) 
-			{
+			if (ed->index >= 0 && ed->arg[ed->index] == 2) {
 				shift = 1;
+			}
+			if (ed->index >= 0 &&  ed->arg[ed->index] == 5) {
+				ctrl = 1;
 			}
 			switch (buf[0]) {
 			case 'A':

@@ -23,7 +23,7 @@ wa:
 
 
 edit: d/edit.c d/main.c d/std.h
-	wpdcc -D C90=1 \
+	cc -D C90=1 \
 		-I d/ -o edit.exe d/main.c d/edit.c \
 		d/tk.c d/tk_inline.c d/tk_style.c d/tk_block.c d/tk_text.c \
 		d/tk_range.c d/tk_widget.c
