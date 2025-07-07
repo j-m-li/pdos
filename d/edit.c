@@ -81,6 +81,7 @@ void *edit__init(struct tk *tk, void *win)
 	ed.cx = 0;
 	ed.cy = 0;
 	edit__print(&ed, "\033c\033[2J\033[9999;9999H\033[6n");
+	edit__print(&ed, "\033[!p\033[?1049h\033[?1003h\033[1015h\033?1006h");
 	edit__flush(&ed);
 	return &ed;
 }
@@ -192,7 +193,7 @@ void edit__machine(void *self, char *buf, int l)
 			edit__backspace(self);
 		} else if (buf[0] == '\t') {
 			edit__tab(self);
-		} else if (buf[0] == '\n') {
+		} else if (buf[0] == '\n' || buf[0] == '\r') {
 			edit__enter(self);
 		} else {
 			while (n < l) {
