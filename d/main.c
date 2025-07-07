@@ -16,7 +16,6 @@
 #include <signal.h>
 
 #ifdef C90
-
 #else
 #include <termios.h>
 #include <sys/select.h>
@@ -411,6 +410,7 @@ int _kbhit()
 }
 
 int _getch()
+{
 	return getchar();
 }
 
@@ -537,10 +537,10 @@ void term_size(int *w, int *h)
 	*w = csbi.srWindow.Right - csbi.srWindow.Left + 1;
 	*h = csbi.srWindow.Bottom - csbi.srWindow.Top + 1;
 #else 
-	struct winsize w;
-	ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-	*w = w.ws_col;
-	*h = w.ws_row;
+	struct winsize win;
+	ioctl(STDOUT_FILENO, TIOCGWINSZ, &win);
+	*w = win.ws_col;
+	*h = win.ws_row;
 #endif
 }
 
