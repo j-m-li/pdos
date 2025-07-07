@@ -428,12 +428,6 @@ void sigint_handler(int sig_no)
 
 int term__deinit()
 {
-	printf("\x1B[?1000l\x1B[?1003l\x1B[?1015l\x1B[?1006l"); 
-	printf("\x1B[r"); 
-	printf("\x1B[?1049l"); 
-	fflush(stdout);
-	fflush(stderr);
-	fflush(stdin);
 	usleep(1000);
 	tcsetattr(0, TCSANOW, &orig_termios);
 	return 0;
@@ -516,6 +510,12 @@ void freemem(void *m)
 
 void exitnow(char *txt)
 {
+	printf("\x1B[?1000l\x1B[?1003l\x1B[?1015l\x1B[?1006l"); 
+	printf("\x1B[r"); 
+	printf("\x1B[?1049l"); 
+	fflush(stdout);
+	fflush(stderr);
+	fflush(stdin);
 	printf("%s\n", txt);
 #ifndef _WIN32
 	system("stty sane");
