@@ -4,20 +4,63 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "echo ${config:bob.is} ${config:go}",
+            "command": "echo ${config:bob.is} ${config:go} mix",
             "problemMatcher": [],
             "dependsOrder": "sequence",
             "dependsOn": [
                 "setup",
-                "make hello"
+                "make hello",
+                "make edit"
             ]
         },
-        {
+       	{
             "hide": true,
             "label": "setup",
             "type": "shell",
             "linux": {
-                "command": "mkdir -p build; touch build/build.exe"
+                "command": "cc -o foreach.exe ../tools/foreach.c"
+            },
+            "osx": {
+                "command": "mkdir -p build"
+            },
+            "windows": {
+                "command": "mkdir build"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+	    "dependsOn": [
+                "make path"
+            ]
+ 
+        },
+       	{
+            "hide": true,
+            "label": "make edit",
+            "type": "shell",
+            "linux": {
+                "command": "cc -o edit ${config:edit.src}"
+            },
+            "osx": {
+                "command": "mkdir -p build"
+            },
+            "windows": {
+                "command": "mkdir build"
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/build"
+            },
+	    "dependsOn": [
+                "make path"
+            ]
+ 
+        },
+        {
+            "hide": true,
+            "label": "make path",
+            "type": "shell",
+            "linux": {
+                "command": "mkdir -p build"
             },
             "osx": {
                 "command": "mkdir -p build"
@@ -34,7 +77,7 @@
             "label": "make hello",
             "type": "shell",
             "linux": {
-                "command": "echo Hello `uname -a`"
+                "command": "./foreach.exe 'echo ${name} ' \"\\\"trip 'off\\\"\" Hello `uname -a`"
             },
             "osx": {
                 "command": "echo Hello MacOS"

@@ -1,6 +1,6 @@
 
-all:  edit 
-	echo done
+all:   
+	./build.cmd .. build
 	
 wa:
 #	clang --target=wasm32 -S -I d/ -o tk.s d/tk.c
