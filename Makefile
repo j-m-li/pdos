@@ -1,6 +1,6 @@
 
 all:   
-	./build.cmd .. build
+	./build.cmd .. build || build.cmd .. build
 	
 wa:
 #	clang --target=wasm32 -S -I d/ -o tk.s d/tk.c
@@ -51,7 +51,8 @@ pdos.zip:
 clean:
 	rm -f edit edit.exe
 	rm -f *.zip *.vhd
-
+	rm -f build/*.*
+	rmdir build
 fmt:
 	clang-format --style="{BasedOnStyle: llvm,UseTab: Always,IndentWidth: 8,TabWidth: 8}" -i d/*.h d/*.c
 	tidy -i -w 1024 --preserve-entities yes --show-info no --warn-proprietary-attributes no -m *.html

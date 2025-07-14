@@ -41,17 +41,21 @@ int run(char *template, char *file)
 			if (template[i] == '{') {
 				i++;
 				j = 0;
+#ifndef _WIN32
 				cmd[c] = '"';
 				c++;
+#endif
 				if (!strncmp("name}", template + i, 5)) {
 					i += 5;
 					while ((c < MAX_COMMAND) && file[j]) {
+#ifndef _WIN32
 						if (file[j] == '"' ||
 							file[j] == '\\') 
 						{
 							cmd[c] = '\\';
 							c++;
 						}
+#endif
 						cmd[c] = file[j];
 						c++;
 						j++;
@@ -83,12 +87,14 @@ int run(char *template, char *file)
 						if (p + j == e) {
 							break;
 						}
+#ifndef _WIN32
 						if (file[j] == '"' ||
 							file[j] == '\\') 
 						{
 							cmd[c] = '\\';
 							c++;
 						}
+#endif
 						cmd[c] = p[j];
 						c++;
 						j++;
@@ -99,8 +105,10 @@ int run(char *template, char *file)
 				if (c >= MAX_COMMAND + 3) {
 					return -1;
 				}
+#ifndef _WIN32
 				cmd[c] = '"';
 				c++;
+#endif
 				cmd[c] = ' ';
 				c++;
 				i--;
@@ -109,8 +117,16 @@ int run(char *template, char *file)
 			cmd[c] = '$';
 			c++;
 		}
+#ifdef _WIN32
+		if (template[i] == '\\' && (template[i+1] == '"' || template[i+1] == '\\')) {
+		} else {
+			cmd[c] = template[i];
+			c++;
+		}
+#else
 		cmd[c] = template[i];
 		c++;
+#endif
 		if (c >= MAX_COMMAND) {
 			return -1;
 		}

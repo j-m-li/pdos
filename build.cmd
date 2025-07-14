@@ -15,18 +15,17 @@ exit $?
 echo ============= 3o3 build %COMSPEC% ============
 set OLDDIR=%CD%
 
-chdir /d %1
+mkdir build  >nul 2>&1
+chdir /d build
 if "%CD%" == "%OLDDIR%" (
 	echo dont build in source tree! 
 	exit 1
 )
-mkdir build  >nul 2>&1
-chdir /d %OLDDIR%
 cl %~dp0\tools\build.c /D_CRT_SECURE_NO_WARNINGS=1 /Fe:build.exe >>build.log 2>&1
 clang -D_CRT_SECURE_NO_WARNINGS=1 %~dp0\tools\build.c -o build.exe >>build.log 2>&1
 echo build %1 %2
 .\build.exe %1 %2
-
+chdir /d %OLDDIR%
 exit 0
 
 
