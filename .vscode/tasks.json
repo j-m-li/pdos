@@ -4,7 +4,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "echo X:${config:build.test}mix${config:edit.src}",
+            "command": "echo X:${config:build.test}mix${config:edit.src}!",
             "dependsOrder": "sequence",
             "dependsOn": [
                 "setup",

@@ -1203,14 +1203,13 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 	i = 0;
 	j = 0;
 	while (cmd[i] && j < bld__MAX_COMMAND) {
-		/*
 		if (cmd[i] == '\\') {
 			if (cmd[i+1] == '\\' || cmd[i+1] == '\''
 			 || cmd[i+1] == '$' || cmd[i+1] == '"') 
 			{
 			       i++;
 			}
-		}*/
+		}
 		tmp[j] = cmd[i];
 		j++;
 		i++;
@@ -1251,9 +1250,17 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 				m++;
 			}	
 		}
-		tmp[i-9+l+k] = 0;
+		l = i-9+l+k;
 		i -= 9;
+		j = 0;
 		while (s && *s) {
+			if (*s == '\\' && (s[1] == '\\' ||
+					s[1] == '\'' || s[1] == '$' ||
+					s[1] == '"'))
+			{
+				s++;
+				j++;
+			}
 			tmp[i] = *s;
 			s++;
 			i++;
@@ -1261,20 +1268,20 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 				exit(-1);
 			}
 		}
+		if (l < i) {
+			i = l;
+		}
+		while (i+j < l) {
+			tmp[i] = tmp[i+j];
+			i++;
+		}
+		tmp[i] = 0;
 		p = (os_utf8*)strstr((char*)tmp, "${config:");
 		n--;
 	}
 	j = 0;
 	i = 0;
 	while (tmp[i]) {
-		if (tmp[i] == '\\') {
-			if (tmp[i+1] == '\\' || tmp[i+1] == '\''
-		 		|| tmp[i+1] == '$' || tmp[i+1] == '"') 
-			{
-		       		i++;
-			}
-		}
-	
 		cmd[j] = tmp[i];
 		i++;
 		j++;
