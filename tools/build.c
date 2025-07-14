@@ -1195,7 +1195,7 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 {
 	os_utf8 *p;
 	int n = 32;
-	int i, j;
+	int i, j, k, l, m;
 	os_utf8 *s;
 	os_utf8 name[80];
 	struct bld__vardata d;
@@ -1203,13 +1203,14 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 	i = 0;
 	j = 0;
 	while (cmd[i] && j < bld__MAX_COMMAND) {
+		/*
 		if (cmd[i] == '\\') {
 			if (cmd[i+1] == '\\' || cmd[i+1] == '\''
 			 || cmd[i+1] == '$' || cmd[i+1] == '"') 
 			{
 			       i++;
 			}
-		}
+		}*/
 		tmp[j] = cmd[i];
 		j++;
 		i++;
@@ -1226,7 +1227,7 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 			}
 			j++;
 		}
-		if (!tmp[j+i]) {
+		if (tmp[j+i] != '}') {
 			return -1;
 		}
 		tmp[i+j] = 0;
@@ -1234,7 +1235,23 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 		d.value[0] = 0;
 		json__visitor(settings, &bld__get_var, &d);
 		tmp[i+j] = '}';
+		j++;
 		s = d.value;
+		l = strlen(s);
+		k = m = strlen(tmp + i + j);
+		if (l > 9) {
+			while (m > 0) {
+				m--;
+				tmp[i-9+l+m] = tmp[i+j+m];
+			}
+		} else {
+			m = 0;
+			while (m < k) {
+				tmp[i-9+l+m] = tmp[i+j+m];
+				m++;
+			}	
+		}
+		tmp[i-9+l+k] = 0;
 		i -= 9;
 		while (s && *s) {
 			tmp[i] = *s;
@@ -1244,16 +1261,25 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 				exit(-1);
 			}
 		}
-
 		p = (os_utf8*)strstr((char*)tmp, "${config:");
 		n--;
 	}
+	j = 0;
 	i = 0;
 	while (tmp[i]) {
-		cmd[i] = tmp[i];
+		if (tmp[i] == '\\') {
+			if (tmp[i+1] == '\\' || tmp[i+1] == '\''
+		 		|| tmp[i+1] == '$' || tmp[i+1] == '"') 
+			{
+		       		i++;
+			}
+		}
+	
+		cmd[j] = tmp[i];
 		i++;
+		j++;
 	}
-	cmd[i] = 0;	
+	cmd[j] = 0;	
 	return 0;
 }
 

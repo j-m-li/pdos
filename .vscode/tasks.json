@@ -4,8 +4,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "echo ${config:bob.is} ${config:go} mix",
-            "problemMatcher": [],
+            "command": "echo X:${config:build.test}mix${config:edit.src}",
             "dependsOrder": "sequence",
             "dependsOn": [
                 "setup",
