@@ -458,7 +458,7 @@ int _kbhit()
     	fd_set fds;
     	FD_ZERO(&fds);
     	FD_SET(0, &fds);
-	tv.tv_usec = 1000 * 10;
+	tv.tv_usec = 1000 * 20;
     	if (select(1, &fds, NULL, NULL, &tv) != 0) {
 		return 1;
 	}
@@ -520,7 +520,7 @@ void exitnow(char *txt)
 #ifndef _WIN32
 	system("stty sane");
 #endif
-	exit(0);
+	exit(10);
 }
 
 static void *win;
@@ -598,19 +598,22 @@ void loop(void)
 
 #else
 		if (_kbhit()) {
-			l = fread(buf, 1, sizeof(buf) - 1, stdin);
+			l = fread(buf,1,1,stdin);
+			
 			if (ferror(stdin)) {
-				exit(0);
+				exit(-2);
 			}
+/*
 			if (l == 1 && buf[0] == '\033') {
 				l = 2;
 				buf[1] = '\033';
 			}
+*/
 #endif
 
 #if 0
 			buf[l] = 0;
-			printf(" %x ", buf[0], buf[1], buf[2], buf[3]);		
+			printf(" %x %d", buf[0], l, buf[1], buf[2], buf[3]);		
 			flush(stdout);
 			return;
 #endif

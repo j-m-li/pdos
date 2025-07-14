@@ -1215,7 +1215,7 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 		i++;
 	}
 	tmp[j] = 0;
-	p = strstr(tmp, "${config:");
+	p = (os_utf8*)strstr((char*)tmp, "${config:");
 	while (p && n) {
 		i = p - tmp;
 		i += 9;
@@ -1245,7 +1245,7 @@ os_result bld__expand(os_utf8 *cmd, struct json__object *settings)
 			}
 		}
 
-		p = strstr(tmp, "${config:");
+		p = (os_utf8*)strstr((char*)tmp, "${config:");
 		n--;
 	}
 	i = 0;

@@ -21,7 +21,7 @@
                 "command": "cc -o foreach.exe ../tools/foreach.c"
             },
             "osx": {
-                "command": "echo foreach"
+                "command": "cc -o foreach.exe ../tools/foreach.c"
             },
             "windows": {
                 "command": "cl /Fe: foreach.exe ../tools/foreach.c"
@@ -39,10 +39,10 @@
             "label": "make edit",
             "type": "shell",
             "linux": {
-                "command": "cc -o edit ${config:edit.src}"
+                "command": "cc -D C90=1 -o edit ${config:edit.src}"
             },
             "osx": {
-                "command": "mkdir -p build"
+                "command": "cc -o edit ${config:edit.src}"
             },
             "windows": {
                 "command": "cl /Fe: edit ${config:edit.src}"
@@ -80,7 +80,7 @@
                 "command": "./foreach.exe 'echo ${name} ' \"\\\"trip 'off\\\"\" Hello `uname -a`"
             },
             "osx": {
-                "command": "echo Hello MacOS"
+                "command": "./foreach.exe 'echo ${name} ' \"\\\"trip 'off\\\"\" Hello `uname -a`"
             },
             "windows": {
                "command": "foreach.exe \"echo ${name} \" \"\\\"trip 'off\\\"\" Hello \"Windows 11\" 12"
@@ -99,10 +99,10 @@
                 "command": "rm -rf build"
             },
             "osx": {
-                "command": "echo Hello MacOS"
+                "command": "rm -rf build"
             },
             "windows": {
-                "command": "echo Hello Windows"
+                "command": "del build\\*.* && rmdir build"
             },
             "options": {
                 "cwd": "${workspaceFolder}"
